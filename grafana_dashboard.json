@@ -22,7 +22,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 1,
-  "iteration": 1633195847028,
+  "iteration": 1633210825637,
   "links": [],
   "panels": [
     {
@@ -51,7 +51,7 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 7,
+        "w": 4,
         "x": 0,
         "y": 0
       },
@@ -157,21 +157,21 @@
               },
               {
                 "params": [],
-                "type": "last"
+                "type": "mean"
               }
             ]
           ],
           "tags": [
             {
-              "key": "plan",
+              "key": "provider",
               "operator": "=~",
-              "value": "/^$plan$/"
+              "value": "/^$provider$/"
             },
             {
               "condition": "AND",
-              "key": "provider",
-              "operator": "=",
-              "value": "PG&E"
+              "key": "plan",
+              "operator": "=~",
+              "value": "/^$plan$/"
             }
           ]
         }
@@ -181,12 +181,12 @@
         {
           "id": "calculateField",
           "options": {
-            "alias": "Hourly cost",
+            "alias": "cost",
             "binary": {
               "left": "Energy usage",
               "operator": "*",
               "reducer": "sum",
-              "right": "rates.last"
+              "right": "rates.mean"
             },
             "mode": "binary",
             "reduce": {
@@ -198,8 +198,7 @@
         {
           "id": "reduce",
           "options": {
-            "includeTimeField": false,
-            "mode": "seriesToRows",
+            "labelsToFields": false,
             "reducers": [
               "sum"
             ]
@@ -210,6 +209,117 @@
     },
     {
       "datasource": null,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "watth"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 3,
+        "x": 4,
+        "y": 0
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.1.5",
+      "targets": [
+        {
+          "groupBy": [
+            {
+              "params": [
+                "1h"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "previous"
+              ],
+              "type": "fill"
+            }
+          ],
+          "hide": false,
+          "measurement": "energy_usage",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT cumulative_sum(mean(\"usage\")) FROM \"energy_usage\" WHERE (\"device_name\" = 'basement-1,2,3') AND $timeFilter GROUP BY time(1h) fill(previous)",
+          "rawQuery": false,
+          "refId": "C",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "usage"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              },
+              {
+                "params": [],
+                "type": "cumulative_sum"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "device_name",
+              "operator": "=~",
+              "value": "/^$location(-1,2,3)?$/"
+            }
+          ]
+        }
+      ],
+      "title": "Total usage",
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "labelsToFields": false,
+            "reducers": [
+              "lastNotNull"
+            ]
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -234,7 +344,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": 3600000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -251,14 +361,10 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
-          "unit": "currencyUSD"
+          "unit": "watt"
         },
         "overrides": []
       },
@@ -268,7 +374,7 @@
         "x": 7,
         "y": 0
       },
-      "id": 9,
+      "id": 2,
       "options": {
         "legend": {
           "calcs": [],
@@ -281,7 +387,7 @@
       },
       "targets": [
         {
-          "alias": "Price per kWh (plan: $plan)",
+          "alias": "Basement usage",
           "groupBy": [
             {
               "params": [
@@ -291,12 +397,12 @@
             },
             {
               "params": [
-                "previous"
+                "null"
               ],
               "type": "fill"
             }
           ],
-          "measurement": "rates",
+          "measurement": "energy_usage",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -305,7 +411,7 @@
             [
               {
                 "params": [
-                  "price"
+                  "usage"
                 ],
                 "type": "field"
               },
@@ -317,20 +423,14 @@
           ],
           "tags": [
             {
-              "key": "provider",
-              "operator": "=",
-              "value": "PG&E"
-            },
-            {
-              "condition": "AND",
-              "key": "plan",
+              "key": "device_name",
               "operator": "=~",
-              "value": "/^$plan$/"
+              "value": "/^$location(-1,2,3)?$/"
             }
           ]
         }
       ],
-      "title": "Plan pricing",
+      "title": "Energy usage (via cloud)",
       "type": "timeseries"
     },
     {
@@ -406,7 +506,6 @@
       },
       "targets": [
         {
-          "alias": "Basement usage",
           "groupBy": [
             {
               "params": [
@@ -461,7 +560,6 @@
     },
     {
       "datasource": null,
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -472,7 +570,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 30,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -486,7 +584,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": 3600000,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -510,17 +608,17 @@
               }
             ]
           },
-          "unit": "watt"
+          "unit": "currencyUSD"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
+        "h": 5,
         "w": 17,
         "x": 7,
         "y": 7
       },
-      "id": 2,
+      "id": 9,
       "options": {
         "legend": {
           "calcs": [],
@@ -533,7 +631,7 @@
       },
       "targets": [
         {
-          "alias": "Basement usage",
+          "alias": "$plan tier [[tag_tier]]",
           "groupBy": [
             {
               "params": [
@@ -543,12 +641,18 @@
             },
             {
               "params": [
-                "null"
+                "tier"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "previous"
               ],
               "type": "fill"
             }
           ],
-          "measurement": "energy_usage",
+          "measurement": "rates",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -557,128 +661,33 @@
             [
               {
                 "params": [
-                  "usage"
+                  "price"
                 ],
                 "type": "field"
               },
               {
                 "params": [],
-                "type": "mean"
+                "type": "last"
               }
             ]
           ],
           "tags": [
             {
-              "key": "device_name",
+              "key": "provider",
               "operator": "=~",
-              "value": "/^$location(-1,2,3)?$/"
-            }
-          ]
-        }
-      ],
-      "title": "Energy usage (via cloud)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": null,
-      "description": "This should be equal to the selected time range. If it's smaller, that means we are omitting data. Try selected a smaller range",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 7,
-        "x": 0,
-        "y": 14
-      },
-      "id": 10,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "8.1.5",
-      "targets": [
-        {
-          "alias": "days worth of data with second resolution",
-          "groupBy": [],
-          "measurement": "energy_usage",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "query": "SELECT mean(\"usage\")  / 1000 FROM \"energy_usage\" WHERE (\"device_name\" =~ /^$location$/) AND $timeFilter GROUP BY time(1h) fill(null)",
-          "rawQuery": false,
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "usage"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "count"
-              },
-              {
-                "params": [
-                  " / 86400"
-                ],
-                "type": "math"
-              }
-            ]
-          ],
-          "tags": [
-            {
-              "key": "device_name",
-              "operator": "=~",
-              "value": "/^$location(-1,2,3)?$/"
-            }
-          ]
-        }
-      ],
-      "title": "days worth of data with 1s resolution",
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true
+              "value": "/^$provider$/"
             },
-            "indexByName": {},
-            "renameByName": {}
-          }
+            {
+              "condition": "AND",
+              "key": "plan",
+              "operator": "=~",
+              "value": "/^$plan$/"
+            }
+          ]
         }
       ],
-      "type": "stat"
+      "title": "Plan pricing",
+      "type": "timeseries"
     },
     {
       "datasource": null,
@@ -739,7 +748,7 @@
         "h": 6,
         "w": 17,
         "x": 7,
-        "y": 14
+        "y": 12
       },
       "id": 6,
       "options": {
@@ -895,6 +904,107 @@
         }
       ],
       "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "description": "This should be equal to the selected time range. If it's smaller, that means we are omitting data. Try selected a smaller range",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 7,
+        "x": 0,
+        "y": 14
+      },
+      "id": 10,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.1.5",
+      "targets": [
+        {
+          "alias": "days worth of data with second resolution",
+          "groupBy": [],
+          "measurement": "energy_usage",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT mean(\"usage\")  / 1000 FROM \"energy_usage\" WHERE (\"device_name\" =~ /^$location$/) AND $timeFilter GROUP BY time(1h) fill(null)",
+          "rawQuery": false,
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "usage"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "count"
+              },
+              {
+                "params": [
+                  " / 86400"
+                ],
+                "type": "math"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "device_name",
+              "operator": "=~",
+              "value": "/^$location(-1,2,3)?$/"
+            }
+          ]
+        }
+      ],
+      "title": "days worth of data with 1s resolution",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "stat"
     }
   ],
   "refresh": false,
@@ -906,9 +1016,9 @@
       {
         "allValue": null,
         "current": {
-          "selected": false,
-          "text": "basement",
-          "value": "basement"
+          "selected": true,
+          "text": "fogangle",
+          "value": "fogangle"
         },
         "datasource": null,
         "definition": "SHOW TAG VALUES WITH KEY=device_name;",
@@ -930,9 +1040,9 @@
       {
         "allValue": null,
         "current": {
-          "selected": false,
-          "text": "EV2A",
-          "value": "EV2A"
+          "selected": true,
+          "text": "E-TOU-C",
+          "value": "E-TOU-C"
         },
         "datasource": null,
         "definition": "SHOW TAG VALUES WITH KEY=plan;",
@@ -950,16 +1060,40 @@
         "skipUrlSync": false,
         "sort": 0,
         "type": "query"
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": "PG&E",
+          "value": "PG&E"
+        },
+        "datasource": null,
+        "definition": "SHOW TAG VALUES WITH KEY=provider;",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": null,
+        "multi": false,
+        "name": "provider",
+        "options": [],
+        "query": "SHOW TAG VALUES WITH KEY=provider;",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
       }
     ]
   },
   "time": {
-    "from": "2021-09-26T07:00:00.000Z",
-    "to": "2021-10-01T06:59:59.000Z"
+    "from": "2021-08-24T04:00:00.000Z",
+    "to": "2021-09-23T06:59:59.000Z"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Basement electricity usage",
   "uid": "uvdZWLz7k",
-  "version": 7
+  "version": 15
 }
