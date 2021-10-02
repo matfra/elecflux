@@ -35,13 +35,13 @@ def test_generate_datapoints_multiple_rates():
                     "deprecated_on": None,
                     "rates": [
                         {
-                            "daily_allowance_Wh": None,
+                            "tier": 1,
                             "price": 0.26,
                             "date_begin": "Jun 1",
                             "date_end": "Sep 30",
                         },
                         {
-                            "daily_allowance_Wh": None,
+                            "tier": 1,
                             "price": 0.9,
                             "date_begin": "Oct 1",
                             "date_end": "May 31",
@@ -55,18 +55,18 @@ def test_generate_datapoints_multiple_rates():
     results = generate_datapoints(RATES, "2020-09-29", "2020-10-03", mytz, "elecprices")
 
     print("\n".join(results))
-    assert "elecprices,provider=foo,plan=bar price=0.26 {}".format(
+    assert "elecprices,provider=foo,plan=bar,tier=1 price=0.26 {}".format(
             int(mytz.localize(datetime.datetime(2020, 9, 30)).timestamp())
         ) in results
-    assert "elecprices,provider=foo,plan=bar enabled=1 {}".format(
+    assert "elecprices,provider=foo,plan=bar,tier=1 enabled=1 {}".format(
             int(mytz.localize(datetime.datetime(2020, 9, 30)).timestamp())
         ) in results
     
-    assert "elecprices,provider=foo,plan=bar price=0.9 {}".format(
+    assert "elecprices,provider=foo,plan=bar,tier=1 price=0.9 {}".format(
             int(mytz.localize(datetime.datetime(2020, 10, 1)).timestamp())
         ) in results
     # Test the case when there is no end time
-    assert "elecprices,provider=foo,plan=bar enabled=0 {}".format(
+    assert "elecprices,provider=foo,plan=bar,tier=1 enabled=0 {}".format(
             int(mytz.localize(datetime.datetime(2020, 10, 2)).timestamp())
         ) not in results
 
@@ -82,13 +82,11 @@ def test_generate_datapoints_expired_plan():
                     "deprecated_on": None,
                     "rates": [
                         {
-                            "daily_allowance_Wh": None,
                             "price": 0.26,
                             "date_begin": "Jun 1",
                             "date_end": "Sep 30",
                         },
                         {
-                            "daily_allowance_Wh": None,
                             "price": 0.9,
                             "date_begin": "Oct 1",
                             "date_end": "May 31",
@@ -118,10 +116,10 @@ def test_generate_datapoints_expired_plan():
     results = generate_datapoints(RATES, "2020-07-29", "2020-08-02", mytz, "elecprices")
 
     print("\n".join(results))
-    assert "elecprices,provider=foo,plan=bar price=0.1 {}".format(
+    assert "elecprices,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
             int(mytz.localize(datetime.datetime(2020, 7, 31)).timestamp())
         ) in results
-    assert "elecprices,provider=foo,plan=bar price=0.26 {}".format(
+    assert "elecprices,provider=foo,plan=bar,tier=1 price=0.26 {}".format(
             int(mytz.localize(datetime.datetime(2020, 8, 1)).timestamp())
         ) in results
 
@@ -153,9 +151,9 @@ def test_generate_datapoints_weekdays_plan():
     results = generate_datapoints(RATES, "2021-10-01", "2021-10-03", mytz, "elecprices")
 
     print("\n".join(results))
-    assert "elecprices,provider=foo,plan=bar price=0.2 {}".format(
+    assert "elecprices,provider=foo,plan=bar,tier=1 price=0.2 {}".format(
             int(mytz.localize(datetime.datetime(2021, 10, 2)).timestamp())
         ) in results
-    assert "elecprices,provider=foo,plan=bar price=0.4 {}".format(
+    assert "elecprices,provider=foo,plan=bar,tier=1 price=0.4 {}".format(
             int(mytz.localize(datetime.datetime(2021, 10, 3)).timestamp())
         ) in results

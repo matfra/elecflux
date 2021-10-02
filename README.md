@@ -23,5 +23,6 @@ influx --host 127.0.0.1 -import -path=rates_2021_H2.csv -precision=s -database=v
 Anything is provided as an example and shouldn't be used in production
 
 # To-do
+E-TOU-C and E-1 are broken on the dashboard due to the way allowance works. Need to rethink that
 Currently this only generates a CSV file. It doesn't connect to influxdb yet
 The grafana dashboard currently does not implement allowances/limits

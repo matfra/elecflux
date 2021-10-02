@@ -7,7 +7,7 @@ other electricity usage timeseries.
 The script can run either continuously as a daemon or (soon TM)
 in one shot mode to populate past data.
 
-It will generate measurements (timeseries) for every plan and baseline allowance pricing at the exact timestamp the price change. It's important to pass the local timezone as an arg.
+It will generate measurements (timeseries) for every plan and baseline allowance pricing (tiers) at the exact timestamp the price change. It's important to pass the local timezone as an arg.
 An additional measurement will be added to the database that contains only 0 or 1 to indicate which time of use (peak, off peak ...) is active. This can enable you to differenciate energy consumed during these different times.
 
 More details on the YAML format in the rates.yaml file
@@ -136,11 +136,9 @@ def generate_datapoints(
                 )
                 tags={
                     "provider": provider["provider"],
-                    "plan": plan.get("name", "default_plan")
+                    "plan": plan.get("name", "default_plan"),
+                    "tier": rate.get("tier", 1)
                 }
-                allowance=rate.get("daily_allowance_Wh")
-                if allowance is not None:
-                    tags["allowance"]=allowance
 
                 while day <= rate_fill_until_dt:
                     if day.strftime("%A") not in rate_valid_days:
