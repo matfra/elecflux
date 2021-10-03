@@ -36,7 +36,11 @@ def get_offset_timestamp_from_hour(hour: int) -> int:
 
 class Datapoint:
     def __init__(
-        self, timestamp: int, measurement: str, values: Dict[str, Union[float, int]], tags: Dict
+        self,
+        timestamp: int,
+        measurement: str,
+        values: Dict[str, Union[float, int]],
+        tags: Dict,
     ):
         self.measurement = measurement
         self.values = values
@@ -49,7 +53,9 @@ class Datapoint:
             tag_strings.append(f"{k}={v}")
         result = []
         for k, v in self.values.items():
-            result.append(f"{self.measurement},{','.join(tag_strings)} {k}={v} {self.timestamp}")
+            result.append(
+                f"{self.measurement},{','.join(tag_strings)} {k}={v} {self.timestamp}"
+            )
         return result
 
 
@@ -79,26 +85,101 @@ def generate_datapoints(
     date_until: str,
     timezone: pytz.timezone,
     measurement: str,
+    allowances_enabled=False,
 ) -> List[Datapoint]:
 
     datapoints = []
+    requested_fill_from_dt = iso_day_to_dt(date_from, timezone)
+    requested_fill_until_dt = iso_day_to_dt(date_until, timezone)
     for provider in providers:
-        for plan in provider["plans"]:
-            plan_being_date=plan.get("active_since")
+        if allowances_enabled is True:
+            # TODO: Put the following block in a helper function so it can be reused for rate
+            for allowance in provider["allowances"]:
+                all_electric = 1 if allowance.get("all_electric", False) is True else 0
+                allowance_begin_date = allowance.get("active_since")
+                allowance_begin_dt = iso_day_to_dt(
+                    str(allowance_begin_date)
+                    if allowance_begin_date is not None
+                    else "2000-01-01",  # 21st century+ only
+                    timezone,
+                )
+                allowance_end_date = allowance.get("deprecated_on")
+                allowance_end_dt = iso_day_to_dt(
+                    str(allowance_end_date)
+                    if allowance_end_date is not None
+                    else "2100-12-31",  # EOL
+                    timezone,
+                )
+                if (
+                    requested_fill_until_dt < allowance_begin_dt
+                    or requested_fill_from_dt > allowance_end_dt
+                ):
+                    logger.debug(
+                        f"Ignoring allowance {allowance} out of dates {requested_fill_from_dt} - {requested_fill_until_dt}"
+                    )
+                    continue
+                fill_from_dt = max(requested_fill_from_dt, allowance_begin_dt)
+                fill_until_dt = min(requested_fill_until_dt, allowance_end_dt)
+
+                allowance_season_begin_dt = timezone.localize(
+                    datetime.strptime(
+                        f"{allowance.get('date_begin', 'Jan 1')} {requested_fill_from_dt.year}",
+                        "%b %d %Y",
+                    )
+                )
+                allowance_season_end_dt = timezone.localize(
+                    datetime.strptime(
+                        f"{allowance.get('date_end', 'Dec 31')} {requested_fill_until_dt.year}",
+                        "%b %d %Y",
+                    )
+                )
+                allowance_season_fill_from_dt = max(
+                    allowance_season_begin_dt,
+                    requested_fill_from_dt,
+                    allowance_begin_dt,
+                )
+                if allowance_season_begin_dt > allowance_season_end_dt:
+                    allowance_season_end_dt += timedelta(days=365)
+                allowance_season_fill_until_dt = min(
+                    allowance_season_end_dt, requested_fill_until_dt, allowance_end_dt
+                )
+                day = allowance_season_fill_from_dt
+                while day <= allowance_season_fill_until_dt:
+                    for territory, daily_allowance_kwh in allowance.get(
+                        "daily_allowance_per_territory_kWh", {}
+                    ).items():
+                        datapoints.extend(
+                            Datapoint(
+                                timestamp=int(day.timestamp()),
+                                measurement="allowances",
+                                values={"allowance": daily_allowance_kwh},
+                                tags={
+                                    "provider": provider["provider"],
+                                    "territory": territory,
+                                    "all_electric": all_electric,
+                                },
+                            ).dump()
+                        )
+                    day += timedelta(days=1)
+
+        for plan in provider.get("plans", []):
+            plan_begin_date = plan.get("active_since")
             plan_begin_dt = iso_day_to_dt(
-                str(plan_being_date) if plan_being_date is not None else "2000-01-01", timezone
+                str(plan_begin_date) if plan_begin_date is not None else "2000-01-01",
+                timezone,
             )
-            plan_end_date=plan.get("deprecated_on")
+            plan_end_date = plan.get("deprecated_on")
             plan_end_dt = iso_day_to_dt(
-                str(plan_end_date) if plan_end_date is not None else "2100-12-31", timezone
+                str(plan_end_date) if plan_end_date is not None else "2100-12-31",
+                timezone,
             )
-            requested_fill_from_dt = iso_day_to_dt(date_from, timezone)
-            requested_fill_until_dt = iso_day_to_dt(date_until, timezone)
             if (
                 requested_fill_until_dt < plan_begin_dt
                 or requested_fill_from_dt > plan_end_dt
             ):
-                logger.debug(f"Ignoring plan {plan} out of dates {requested_fill_from_dt} - {requested_fill_until_dt}")
+                logger.debug(
+                    f"Ignoring plan {plan} out of dates {requested_fill_from_dt} - {requested_fill_until_dt}"
+                )
                 continue
             fill_from_dt = max(requested_fill_from_dt, plan_begin_dt)
             fill_until_dt = min(requested_fill_until_dt, plan_end_dt)
@@ -106,15 +187,21 @@ def generate_datapoints(
             for rate in plan["rates"]:
 
                 rate_begin_dt = timezone.localize(
-                    datetime.strptime(f"{rate.get('date_begin', 'Jan 1')} {requested_fill_from_dt.year}", "%b %d %Y")
+                    datetime.strptime(
+                        f"{rate.get('date_begin', 'Jan 1')} {requested_fill_from_dt.year}",
+                        "%b %d %Y",
+                    )
                 )
                 rate_end_dt = timezone.localize(
-                    datetime.strptime(f"{rate.get('date_end', 'Dec 31')} {requested_fill_until_dt.year}", "%b %d %Y")
+                    datetime.strptime(
+                        f"{rate.get('date_end', 'Dec 31')} {requested_fill_until_dt.year}",
+                        "%b %d %Y",
+                    )
                 )
                 rate_fill_from_dt = max(
                     rate_begin_dt, requested_fill_from_dt, plan_begin_dt
                 )
-                if rate_begin_dt>rate_end_dt:
+                if rate_begin_dt > rate_end_dt:
                     rate_end_dt += timedelta(days=365)
                 rate_fill_until_dt = min(
                     rate_end_dt, requested_fill_until_dt, plan_end_dt
@@ -134,10 +221,10 @@ def generate_datapoints(
                         ],
                     )
                 )
-                tags={
+                tags = {
                     "provider": provider["provider"],
                     "plan": plan.get("name", "default_plan"),
-                    "tier": rate.get("tier", 1)
+                    "tier": rate.get("tier", 1),
                 }
 
                 while day <= rate_fill_until_dt:
@@ -154,12 +241,13 @@ def generate_datapoints(
                             )
                         ).timestamp()
                     )
+
                     datapoints.extend(
                         Datapoint(
                             timestamp=timestamp,
                             measurement=measurement,
                             values={"price": rate.get("price"), "enabled": 1},
-                            tags=tags
+                            tags=tags,
                         ).dump()
                     )
                     hour_end = rate.get("time_end")
@@ -168,7 +256,9 @@ def generate_datapoints(
                             (
                                 day
                                 + timedelta(
-                                    seconds=get_offset_timestamp_from_hour(int(hour_end))
+                                    seconds=get_offset_timestamp_from_hour(
+                                        int(hour_end)
+                                    )
                                 )
                             ).timestamp()
                         )
@@ -223,10 +313,12 @@ def main(args):
         exit(run_daemon(rates, timezone))
     if date_end is None:
         date_end = datetime.now().strftime("%Y-%m-%d")
-    datapoints=generate_datapoints(rates, date_begin, date_end, timezone, args.measurement)
+    datapoints = generate_datapoints(
+        rates, date_begin, date_end, timezone, args.measurement,  args.allowances
+    )
     # TODO: Replace this cheap CSV export
     if args.csv is True:
-        print(datapoints_to_csv(datapoints,db))
+        print(datapoints_to_csv(datapoints, db))
 
 
 if __name__ == "__main__":
@@ -236,8 +328,18 @@ if __name__ == "__main__":
     # Required positional argument
     parser.add_argument("rates_file", help="Required rates.yaml file")
 
-    parser.add_argument("-c", "--csv", action='store_true', help="Do not connect to InfluxDB, just output CSV instead")
-    # InfluxDB related arguments
+    parser.add_argument(
+        "-c",
+        "--csv",
+        action="store_true",
+        help="Do not connect to InfluxDB, just output CSV instead",
+    )
+    parser.add_argument(
+        "-a",
+        "--allowances",
+        action="store_true",
+        help="Generate an allowances measurement too",
+    )
     parser.add_argument(
         "-i", "--influxdb-host", type=str, help="Influxdb host", default="127.0.0.1"
     )

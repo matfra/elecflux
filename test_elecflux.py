@@ -55,21 +55,32 @@ def test_generate_datapoints_multiple_rates():
     results = generate_datapoints(RATES, "2020-09-29", "2020-10-03", mytz, "elecprices")
 
     print("\n".join(results))
-    assert "elecprices,provider=foo,plan=bar,tier=1 price=0.26 {}".format(
+    assert (
+        "elecprices,provider=foo,plan=bar,tier=1 price=0.26 {}".format(
             int(mytz.localize(datetime.datetime(2020, 9, 30)).timestamp())
-        ) in results
-    assert "elecprices,provider=foo,plan=bar,tier=1 enabled=1 {}".format(
+        )
+        in results
+    )
+    assert (
+        "elecprices,provider=foo,plan=bar,tier=1 enabled=1 {}".format(
             int(mytz.localize(datetime.datetime(2020, 9, 30)).timestamp())
-        ) in results
-    
-    assert "elecprices,provider=foo,plan=bar,tier=1 price=0.9 {}".format(
-            int(mytz.localize(datetime.datetime(2020, 10, 1)).timestamp())
-        ) in results
-    # Test the case when there is no end time
-    assert "elecprices,provider=foo,plan=bar,tier=1 enabled=0 {}".format(
-            int(mytz.localize(datetime.datetime(2020, 10, 2)).timestamp())
-        ) not in results
+        )
+        in results
+    )
 
+    assert (
+        "elecprices,provider=foo,plan=bar,tier=1 price=0.9 {}".format(
+            int(mytz.localize(datetime.datetime(2020, 10, 1)).timestamp())
+        )
+        in results
+    )
+    # Test the case when there is no end time
+    assert (
+        "elecprices,provider=foo,plan=bar,tier=1 enabled=0 {}".format(
+            int(mytz.localize(datetime.datetime(2020, 10, 2)).timestamp())
+        )
+        not in results
+    )
 
 
 def test_generate_datapoints_expired_plan():
@@ -108,7 +119,7 @@ def test_generate_datapoints_expired_plan():
                             "date_end": "May 31",
                         },
                     ],
-                }
+                },
             ],
         }
     ]
@@ -116,12 +127,18 @@ def test_generate_datapoints_expired_plan():
     results = generate_datapoints(RATES, "2020-07-29", "2020-08-02", mytz, "elecprices")
 
     print("\n".join(results))
-    assert "elecprices,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
+    assert (
+        "elecprices,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
             int(mytz.localize(datetime.datetime(2020, 7, 31)).timestamp())
-        ) in results
-    assert "elecprices,provider=foo,plan=bar,tier=1 price=0.26 {}".format(
+        )
+        in results
+    )
+    assert (
+        "elecprices,provider=foo,plan=bar,tier=1 price=0.26 {}".format(
             int(mytz.localize(datetime.datetime(2020, 8, 1)).timestamp())
-        ) in results
+        )
+        in results
+    )
 
 
 def test_generate_datapoints_weekdays_plan():
@@ -151,9 +168,60 @@ def test_generate_datapoints_weekdays_plan():
     results = generate_datapoints(RATES, "2021-10-01", "2021-10-03", mytz, "elecprices")
 
     print("\n".join(results))
-    assert "elecprices,provider=foo,plan=bar,tier=1 price=0.2 {}".format(
+    assert (
+        "elecprices,provider=foo,plan=bar,tier=1 price=0.2 {}".format(
             int(mytz.localize(datetime.datetime(2021, 10, 2)).timestamp())
-        ) in results
-    assert "elecprices,provider=foo,plan=bar,tier=1 price=0.4 {}".format(
+        )
+        in results
+    )
+    assert (
+        "elecprices,provider=foo,plan=bar,tier=1 price=0.4 {}".format(
             int(mytz.localize(datetime.datetime(2021, 10, 3)).timestamp())
-        ) in results
+        )
+        in results
+    )
+
+
+def test_generate_datapoints_allowances():
+    RATES = [
+        {
+            "provider": "foo",
+            "allowances": [
+                {
+                    "active_since": "2019-10-01",
+                    "all_electric": True,
+                    "daily_allowance_per_territory_kWh": {
+                        "P": 27.4,
+                        "Q": 27.4,
+                        "R": 28.1,
+                        "S": 24.9,
+                        "T": 13.6,
+                        "V": 16.9,
+                        "W": 20,
+                        "X": 15.4,
+                        "Y": 25.3,
+                        "Z": 16.5,
+                    },
+                    "date_begin": "Oct 1",
+                    "date_end": "May 31",
+                    "deprecated_on": None,
+                    "description": "Daily allowance for Tier 1 pricing in Winter when using electric heating",
+                }
+            ],
+        }
+    ]
+    mytz = pytz.timezone("America/Los_Angeles")
+    results = generate_datapoints(
+        RATES, "2021-10-01", "2021-10-03", mytz, "elecprices", True
+    )
+
+    print("\n".join(results))
+    assert (
+        "allowances,provider=foo,territory=T,all_electric=1 allowance=13.6 {}".format(
+            int(mytz.localize(datetime.datetime(2021, 10, 2)).timestamp())
+        )
+        in results
+    )
+
+
+test_generate_datapoints_allowances()
