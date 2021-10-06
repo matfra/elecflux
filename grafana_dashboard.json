@@ -22,7 +22,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 1,
-  "iteration": 1633275219425,
+  "iteration": 1633535188457,
   "links": [],
   "panels": [
     {
@@ -74,7 +74,7 @@
       "pluginVersion": "8.1.5",
       "targets": [
         {
-          "alias": "Energy usage",
+          "alias": "hourly energy usage",
           "groupBy": [
             {
               "params": [
@@ -125,6 +125,7 @@
           ]
         },
         {
+          "alias": "hourly prices at tier 1",
           "groupBy": [
             {
               "params": [
@@ -172,6 +173,128 @@
               "key": "plan",
               "operator": "=~",
               "value": "/^$plan$/"
+            },
+            {
+              "condition": "AND",
+              "key": "tier",
+              "operator": "=",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "alias": "hourly prices at tier 2",
+          "groupBy": [
+            {
+              "params": [
+                "1h"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "previous"
+              ],
+              "type": "fill"
+            }
+          ],
+          "hide": false,
+          "measurement": "rates",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT last(\"price\") FROM \"pge_rates\" WHERE (\"plan\" = 'EV2A' AND \"location\" = 'sfo') AND $timeFilter GROUP BY time($__interval) fill(previous)",
+          "rawQuery": false,
+          "refId": "C",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "price"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "provider",
+              "operator": "=~",
+              "value": "/^$provider$/"
+            },
+            {
+              "condition": "AND",
+              "key": "plan",
+              "operator": "=~",
+              "value": "/^$plan$/"
+            },
+            {
+              "condition": "AND",
+              "key": "tier",
+              "operator": "=",
+              "value": "2"
+            }
+          ]
+        },
+        {
+          "alias": "hourly prices at tier 3",
+          "groupBy": [
+            {
+              "params": [
+                "1h"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "previous"
+              ],
+              "type": "fill"
+            }
+          ],
+          "hide": false,
+          "measurement": "rates",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT last(\"price\") FROM \"pge_rates\" WHERE (\"plan\" = 'EV2A' AND \"location\" = 'sfo') AND $timeFilter GROUP BY time($__interval) fill(previous)",
+          "rawQuery": false,
+          "refId": "D",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "price"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "provider",
+              "operator": "=~",
+              "value": "/^$provider$/"
+            },
+            {
+              "condition": "AND",
+              "key": "plan",
+              "operator": "=~",
+              "value": "/^$plan$/"
+            },
+            {
+              "condition": "AND",
+              "key": "tier",
+              "operator": "=",
+              "value": "3"
             }
           ]
         }
@@ -181,12 +304,12 @@
         {
           "id": "calculateField",
           "options": {
-            "alias": "cost",
+            "alias": "",
             "binary": {
-              "left": "Energy usage",
+              "left": "hourly energy usage",
               "operator": "*",
               "reducer": "sum",
-              "right": "rates.mean"
+              "right": "hourly prices at tier 1"
             },
             "mode": "binary",
             "reduce": {
@@ -1328,8 +1451,8 @@
         "allValue": null,
         "current": {
           "selected": false,
-          "text": "E-TOU-C",
-          "value": "E-TOU-C"
+          "text": "EV2",
+          "value": "EV2"
         },
         "datasource": null,
         "definition": "SHOW TAG VALUES WITH KEY=plan;",
@@ -1430,12 +1553,12 @@
     ]
   },
   "time": {
-    "from": "now-7d",
+    "from": "now-15d",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Basement electricity usage",
   "uid": "uvdZWLz7k",
-  "version": 21
+  "version": 22
 }
