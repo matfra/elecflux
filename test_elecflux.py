@@ -223,5 +223,53 @@ def test_generate_datapoints_allowances():
         in results
     )
 
+def test_dst_fall_back():
+    RATES = [
+        {
+            "provider": "foo",
+            "plans": [
+                {
+                    "name": "bar",
+                    "deprecated_on": None,
+                    "rates": [
+                        {
+                            "price": 0.1,
+                            "time_begin": 1000,
+                            "time_end": 2000,
+                            "date_begin": "Jan 1",
+                            "date_end": "Dec 31",
+                        },
+                        {
+                            "price": 0.5,
+                            "time_begin": 2000,
+                            "time_end": 1000,
+                            "date_begin": "Jan 1",
+                            "date_end": "Dec 31",
+                        },
+                    ],
+                }
+            ],
+        }
+    ]
+    mytz = pytz.timezone("America/Los_Angeles")
+    results = generate_datapoints(RATES, "2021-11-06", "2021-11-07", mytz, "elecprices")
 
-test_generate_datapoints_allowances()
+    print("\n".join(results))
+    assert (
+        "elecprices,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
+            int(mytz.localize(datetime.datetime(2021, 11, 6,10,0,0)).timestamp())
+        )
+        in results
+    )
+    assert (
+        "elecprices,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
+            int(mytz.localize(datetime.datetime(2021, 11, 7,10,0,0)).timestamp())
+        )
+        in results
+    )
+    assert (
+        "elecprices,provider=foo,plan=bar,tier=1 price=0.5 {}".format(
+            int(mytz.localize(datetime.datetime(2021, 11, 7,20,0,0)).timestamp())
+        )
+        in results
+    )

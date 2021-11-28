@@ -160,7 +160,9 @@ def generate_datapoints(
                                 },
                             ).dump()
                         )
-                    day += timedelta(days=1)
+                    day = timezone.localize(
+                        day.replace(tzinfo=None) + timedelta(days=1)
+                    )
 
         for plan in provider.get("plans", []):
             plan_begin_date = plan.get("active_since")
@@ -229,15 +231,19 @@ def generate_datapoints(
 
                 while day <= rate_fill_until_dt:
                     if day.strftime("%A") not in rate_valid_days:
-                        day += timedelta(days=1)
+                        day = timezone.localize(
+                            day.replace(tzinfo=None) + timedelta(days=1)
+                        )
                         continue
 
                     hour_begin = int(rate.get("time_begin", 0000))
                     timestamp = int(
                         (
-                            day
-                            + timedelta(
-                                seconds=get_offset_timestamp_from_hour(hour_begin)
+                            timezone.localize(
+                                day.replace(tzinfo=None)
+                                + timedelta(
+                                    seconds=get_offset_timestamp_from_hour(hour_begin)
+                                )
                             )
                         ).timestamp()
                     )
@@ -254,10 +260,12 @@ def generate_datapoints(
                     if hour_end is not None:
                         timestamp_end = int(
                             (
-                                day
-                                + timedelta(
-                                    seconds=get_offset_timestamp_from_hour(
-                                        int(hour_end)
+                                timezone.localize(
+                                    day.replace(tzinfo=None)
+                                    + timedelta(
+                                        seconds=get_offset_timestamp_from_hour(
+                                            int(hour_end)
+                                        )
                                     )
                                 )
                             ).timestamp()
@@ -270,7 +278,9 @@ def generate_datapoints(
                                 tags=tags,
                             ).dump()
                         )
-                    day += timedelta(days=1)
+                    day = timezone.localize(
+                        day.replace(tzinfo=None) + timedelta(days=1)
+                    )
     return datapoints
 
 
@@ -314,7 +324,7 @@ def main(args):
     if date_end is None:
         date_end = datetime.now().strftime("%Y-%m-%d")
     datapoints = generate_datapoints(
-        rates, date_begin, date_end, timezone, args.measurement,  args.allowances
+        rates, date_begin, date_end, timezone, args.measurement, args.allowances
     )
     # TODO: Replace this cheap CSV export
     if args.csv is True:
