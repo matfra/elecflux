@@ -4,8 +4,6 @@ import pytz
 import datetime
 from logzero import logger
 
-logger.debug("Enabling debug logs")
-
 
 def test_get_offset_timestamp_from_hour():
     assert (
@@ -52,31 +50,31 @@ def test_generate_datapoints_multiple_rates():
         }
     ]
     mytz = pytz.timezone("America/Los_Angeles")
-    results = generate_datapoints(RATES, "2020-09-29", "2020-10-03", mytz, "elecprices")
+    results = generate_datapoints(RATES, "2020-09-29", "2020-10-03", mytz)
 
     print("\n".join(results))
     assert (
-        "elecprices,provider=foo,plan=bar,tier=1 price=0.26 {}".format(
+        "rates,provider=foo,plan=bar,tier=1 price=0.26 {}".format(
             int(mytz.localize(datetime.datetime(2020, 9, 30)).timestamp())
         )
         in results
     )
     assert (
-        "elecprices,provider=foo,plan=bar,tier=1 enabled=1 {}".format(
+        "rates,provider=foo,plan=bar,tier=1 enabled=1 {}".format(
             int(mytz.localize(datetime.datetime(2020, 9, 30)).timestamp())
         )
         in results
     )
 
     assert (
-        "elecprices,provider=foo,plan=bar,tier=1 price=0.9 {}".format(
+        "rates,provider=foo,plan=bar,tier=1 price=0.9 {}".format(
             int(mytz.localize(datetime.datetime(2020, 10, 1)).timestamp())
         )
         in results
     )
     # Test the case when there is no end time
     assert (
-        "elecprices,provider=foo,plan=bar,tier=1 enabled=0 {}".format(
+        "rates,provider=foo,plan=bar,tier=1 enabled=0 {}".format(
             int(mytz.localize(datetime.datetime(2020, 10, 2)).timestamp())
         )
         not in results
@@ -124,17 +122,17 @@ def test_generate_datapoints_expired_plan():
         }
     ]
     mytz = pytz.timezone("America/Los_Angeles")
-    results = generate_datapoints(RATES, "2020-07-29", "2020-08-02", mytz, "elecprices")
+    results = generate_datapoints(RATES, "2020-07-29", "2020-08-02", mytz)
 
     print("\n".join(results))
     assert (
-        "elecprices,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
+        "rates,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
             int(mytz.localize(datetime.datetime(2020, 7, 31)).timestamp())
         )
         in results
     )
     assert (
-        "elecprices,provider=foo,plan=bar,tier=1 price=0.26 {}".format(
+        "rates,provider=foo,plan=bar,tier=1 price=0.26 {}".format(
             int(mytz.localize(datetime.datetime(2020, 8, 1)).timestamp())
         )
         in results
@@ -165,17 +163,17 @@ def test_generate_datapoints_weekdays_plan():
         }
     ]
     mytz = pytz.timezone("America/Los_Angeles")
-    results = generate_datapoints(RATES, "2021-10-01", "2021-10-03", mytz, "elecprices")
+    results = generate_datapoints(RATES, "2021-10-01", "2021-10-03", mytz)
 
     print("\n".join(results))
     assert (
-        "elecprices,provider=foo,plan=bar,tier=1 price=0.2 {}".format(
+        "rates,provider=foo,plan=bar,tier=1 price=0.2 {}".format(
             int(mytz.localize(datetime.datetime(2021, 10, 2)).timestamp())
         )
         in results
     )
     assert (
-        "elecprices,provider=foo,plan=bar,tier=1 price=0.4 {}".format(
+        "rates,provider=foo,plan=bar,tier=1 price=0.4 {}".format(
             int(mytz.localize(datetime.datetime(2021, 10, 3)).timestamp())
         )
         in results
@@ -211,9 +209,7 @@ def test_generate_datapoints_allowances():
         }
     ]
     mytz = pytz.timezone("America/Los_Angeles")
-    results = generate_datapoints(
-        RATES, "2021-10-01", "2021-10-03", mytz, "elecprices", True
-    )
+    results = generate_datapoints(RATES, "2021-10-01", "2021-10-03", mytz)
 
     print("\n".join(results))
     assert (
@@ -252,23 +248,23 @@ def test_dst_fall_back():
         }
     ]
     mytz = pytz.timezone("America/Los_Angeles")
-    results = generate_datapoints(RATES, "2021-11-06", "2021-11-07", mytz, "elecprices")
+    results = generate_datapoints(RATES, "2021-11-06", "2021-11-07", mytz)
 
     print("\n".join(results))
     assert (
-        "elecprices,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
+        "rates,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
             int(mytz.localize(datetime.datetime(2021, 11, 6,10,0,0)).timestamp())
         )
         in results
     )
     assert (
-        "elecprices,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
+        "rates,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
             int(mytz.localize(datetime.datetime(2021, 11, 7,10,0,0)).timestamp())
         )
         in results
     )
     assert (
-        "elecprices,provider=foo,plan=bar,tier=1 price=0.5 {}".format(
+        "rates,provider=foo,plan=bar,tier=1 price=0.5 {}".format(
             int(mytz.localize(datetime.datetime(2021, 11, 7,20,0,0)).timestamp())
         )
         in results

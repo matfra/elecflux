@@ -22,7 +22,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 1,
-  "iteration": 1633210825637,
+  "iteration": 1633535188457,
   "links": [],
   "panels": [
     {
@@ -74,7 +74,7 @@
       "pluginVersion": "8.1.5",
       "targets": [
         {
-          "alias": "Energy usage",
+          "alias": "hourly energy usage",
           "groupBy": [
             {
               "params": [
@@ -125,6 +125,7 @@
           ]
         },
         {
+          "alias": "hourly prices at tier 1",
           "groupBy": [
             {
               "params": [
@@ -172,6 +173,128 @@
               "key": "plan",
               "operator": "=~",
               "value": "/^$plan$/"
+            },
+            {
+              "condition": "AND",
+              "key": "tier",
+              "operator": "=",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "alias": "hourly prices at tier 2",
+          "groupBy": [
+            {
+              "params": [
+                "1h"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "previous"
+              ],
+              "type": "fill"
+            }
+          ],
+          "hide": false,
+          "measurement": "rates",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT last(\"price\") FROM \"pge_rates\" WHERE (\"plan\" = 'EV2A' AND \"location\" = 'sfo') AND $timeFilter GROUP BY time($__interval) fill(previous)",
+          "rawQuery": false,
+          "refId": "C",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "price"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "provider",
+              "operator": "=~",
+              "value": "/^$provider$/"
+            },
+            {
+              "condition": "AND",
+              "key": "plan",
+              "operator": "=~",
+              "value": "/^$plan$/"
+            },
+            {
+              "condition": "AND",
+              "key": "tier",
+              "operator": "=",
+              "value": "2"
+            }
+          ]
+        },
+        {
+          "alias": "hourly prices at tier 3",
+          "groupBy": [
+            {
+              "params": [
+                "1h"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "previous"
+              ],
+              "type": "fill"
+            }
+          ],
+          "hide": false,
+          "measurement": "rates",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT last(\"price\") FROM \"pge_rates\" WHERE (\"plan\" = 'EV2A' AND \"location\" = 'sfo') AND $timeFilter GROUP BY time($__interval) fill(previous)",
+          "rawQuery": false,
+          "refId": "D",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "price"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "provider",
+              "operator": "=~",
+              "value": "/^$provider$/"
+            },
+            {
+              "condition": "AND",
+              "key": "plan",
+              "operator": "=~",
+              "value": "/^$plan$/"
+            },
+            {
+              "condition": "AND",
+              "key": "tier",
+              "operator": "=",
+              "value": "3"
             }
           ]
         }
@@ -181,12 +304,12 @@
         {
           "id": "calculateField",
           "options": {
-            "alias": "cost",
+            "alias": "",
             "binary": {
-              "left": "Energy usage",
+              "left": "hourly energy usage",
               "operator": "*",
               "reducer": "sum",
-              "right": "rates.mean"
+              "right": "hourly prices at tier 1"
             },
             "mode": "binary",
             "reduce": {
@@ -230,7 +353,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
+        "h": 3,
         "w": 3,
         "x": 4,
         "y": 0
@@ -435,6 +558,155 @@
     },
     {
       "datasource": null,
+      "description": "Usage limit for this period before paying the higher tier pricing. Does not apply to EV2 and E-TOU-D",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "watth"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 4,
+        "y": 3
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.1.5",
+      "targets": [
+        {
+          "groupBy": [
+            {
+              "params": [
+                "provider"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "territory"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "all_electric"
+              ],
+              "type": "tag"
+            }
+          ],
+          "hide": false,
+          "measurement": "allowances",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT cumulative_sum(mean(\"usage\")) FROM \"energy_usage\" WHERE (\"device_name\" = 'basement-1,2,3') AND $timeFilter GROUP BY time(1h) fill(previous)",
+          "rawQuery": false,
+          "refId": "C",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "allowance"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "cumulative_sum"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "provider",
+              "operator": "=~",
+              "value": "/^$provider$/"
+            },
+            {
+              "condition": "AND",
+              "key": "all_electric",
+              "operator": "=~",
+              "value": "/^$all_electric$/"
+            },
+            {
+              "condition": "AND",
+              "key": "territory",
+              "operator": "=~",
+              "value": "/^$territory$/"
+            }
+          ]
+        },
+        {
+          "hide": false,
+          "query": "SELECT count(\"price\") FROM \"rates\" WHERE (\"provider\" =~ /^$provider$/ AND \"plan\" =~ /^$plan$/ AND \"tier\" = '2') AND $timeFilter GROUP BY time(1h) fill(previous)\n",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Baseline allowance for this period",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "binary": {
+              "left": "rates.count",
+              "operator": "*",
+              "reducer": "sum",
+              "right": "allowances.cumulative_sum {all_electric: 1, provider: PG&E, territory: T}"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "rates.count * allowances.cumulative_sum {all_electric: 1, provider: PG&E, territory: T}"
+              ],
+              "reducer": "max"
+            },
+            "replaceFields": true
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": null,
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -521,12 +793,69 @@
             }
           ],
           "hide": false,
+          "measurement": "rates",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT count(\"price\") FROM \"rates\" WHERE (\"provider\" =~ /^$provider$/ AND \"plan\" =~ /^$plan$/ AND \"tier\" = '2') AND $timeFilter GROUP BY time(1h) fill(previous)",
+          "rawQuery": true,
+          "refId": "B",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "price"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "count"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "provider",
+              "operator": "=~",
+              "value": "/^$provider$/"
+            },
+            {
+              "condition": "AND",
+              "key": "plan",
+              "operator": "=~",
+              "value": "/^$plan$/"
+            },
+            {
+              "condition": "AND",
+              "key": "tier",
+              "operator": "=",
+              "value": "2"
+            }
+          ]
+        },
+        {
+          "groupBy": [
+            {
+              "params": [
+                "1h"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "previous"
+              ],
+              "type": "fill"
+            }
+          ],
+          "hide": false,
           "measurement": "energy_usage",
           "orderByTime": "ASC",
           "policy": "default",
           "query": "SELECT cumulative_sum(mean(\"usage\")) FROM \"energy_usage\" WHERE (\"device_name\" = 'basement-1,2,3') AND $timeFilter GROUP BY time(1h) fill(previous)",
           "rawQuery": false,
-          "refId": "C",
+          "refId": "usage",
           "resultFormat": "time_series",
           "select": [
             [
@@ -553,9 +882,90 @@
               "value": "/^$location(-1,2,3)?$/"
             }
           ]
+        },
+        {
+          "groupBy": [],
+          "hide": false,
+          "measurement": "allowances",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT cumulative_sum(\"allowance\") FROM \"allowances\" WHERE (\"provider\" =~ /^$provider$/ AND \"all_electric\" =~ /^$all_electric$/ AND \"territory\" =~ /^$territory$/) AND $timeFilter GROUP BY \"provider\", \"territory\", \"all_electric\"",
+          "rawQuery": false,
+          "refId": "allowances",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "allowance"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "cumulative_sum"
+              },
+              {
+                "params": [
+                  " *1000"
+                ],
+                "type": "math"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "all_electric",
+              "operator": "=~",
+              "value": "/^$all_electric$/"
+            },
+            {
+              "condition": "AND",
+              "key": "provider",
+              "operator": "=~",
+              "value": "/^$provider$/"
+            },
+            {
+              "condition": "AND",
+              "key": "territory",
+              "operator": "=~",
+              "value": "/^$territory$/"
+            }
+          ]
         }
       ],
       "title": "Cumulative usage",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "allowance",
+            "binary": {
+              "left": "rates.count",
+              "operator": "*",
+              "reducer": "sum",
+              "right": "allowances.cumulative_sum"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": false
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "Time",
+                "energy_usage.cumulative_sum",
+                "allowance"
+              ]
+            }
+          }
+        }
+      ],
       "type": "timeseries"
     },
     {
@@ -1007,7 +1417,7 @@
       "type": "stat"
     }
   ],
-  "refresh": false,
+  "refresh": "",
   "schemaVersion": 30,
   "style": "dark",
   "tags": [],
@@ -1016,9 +1426,9 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
-          "text": "fogangle",
-          "value": "fogangle"
+          "selected": false,
+          "text": "basement",
+          "value": "basement"
         },
         "datasource": null,
         "definition": "SHOW TAG VALUES WITH KEY=device_name;",
@@ -1040,9 +1450,9 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
-          "text": "E-TOU-C",
-          "value": "E-TOU-C"
+          "selected": false,
+          "text": "EV2",
+          "value": "EV2"
         },
         "datasource": null,
         "definition": "SHOW TAG VALUES WITH KEY=plan;",
@@ -1064,7 +1474,7 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "PG&E",
           "value": "PG&E"
         },
@@ -1084,16 +1494,71 @@
         "skipUrlSync": false,
         "sort": 0,
         "type": "query"
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "T",
+          "value": "T"
+        },
+        "datasource": null,
+        "definition": "SHOW TAG VALUES WITH KEY=territory;",
+        "description": "San Francisco is 'T' ",
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": null,
+        "multi": false,
+        "name": "territory",
+        "options": [],
+        "query": "SHOW TAG VALUES WITH KEY=territory;",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "1",
+          "value": "1"
+        },
+        "description": "Chose 1 if the main heater in your home is electric",
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Electric heating?",
+        "multi": false,
+        "name": "all_electric",
+        "options": [
+          {
+            "selected": false,
+            "text": "0",
+            "value": "0"
+          },
+          {
+            "selected": true,
+            "text": "1",
+            "value": "1"
+          }
+        ],
+        "query": "0,1",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
       }
     ]
   },
   "time": {
-    "from": "2021-08-24T04:00:00.000Z",
-    "to": "2021-09-23T06:59:59.000Z"
+    "from": "now-15d",
+    "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Basement electricity usage",
   "uid": "uvdZWLz7k",
-  "version": 15
+  "version": 22
 }
