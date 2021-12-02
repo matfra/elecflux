@@ -343,3 +343,48 @@ def test_prices_over_multiple_years():
         )
         in results
     )
+
+def test_midnight_datapoint():
+    RATES = [
+        {
+            "provider": "foo",
+            "plans": [
+                {
+                    "name": "bar",
+                    "deprecated_on": None,
+                    "rates": [
+                        {
+                            "price": 0.1,
+                            "time_begin": 1000,
+                            "time_end": 2000,
+                            "date_begin": "Jan 1",
+                            "date_end": "Dec 31",
+                        },
+                        {
+                            "price": 0.5,
+                            "time_begin": 2000,
+                            "time_end": 1000,
+                            "date_begin": "Jan 1",
+                            "date_end": "Dec 31",
+                        },
+                    ],
+                }
+            ],
+        }
+    ]
+    mytz = pytz.timezone("America/Los_Angeles")
+    results = generate_datapoints(RATES, "2021-11-11", "2021-11-13", mytz)
+
+    print("\n".join(results))
+    assert (
+        "rates,provider=foo,plan=bar,tier=1 price=0.5 {}".format(
+            int(mytz.localize(datetime.datetime(2021, 11, 11,20,0,0)).timestamp())
+        )
+        in results
+    )
+    assert (
+        "rates,provider=foo,plan=bar,tier=1 price=0.5 {}".format(
+            int(mytz.localize(datetime.datetime(2021, 11, 12,0,0,0)).timestamp())
+        )
+        in results
+    )

@@ -276,6 +276,24 @@ def generate_datapoints(
                                     tags=tags,
                                 ).dump()
                             )
+                            if hour_begin > hour_end:
+                                timestamp = int(
+                                    (
+                                        timezone.localize(
+                                            day.replace(tzinfo=None)
+                                            )
+                                    ).timestamp()
+                                )
+
+                                datapoints.extend(
+                                    Datapoint(
+                                        timestamp=timestamp,
+                                        measurement="rates",
+                                        values={"price": rate.get("price"), "enabled": 1},
+                                        tags=tags,
+                                    ).dump()
+                                )
+
                         day = timezone.localize(
                             day.replace(tzinfo=None) + timedelta(days=1)
                         )
