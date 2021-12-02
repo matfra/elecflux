@@ -186,35 +186,51 @@ def test_generate_datapoints_allowances():
             "provider": "foo",
             "allowances": [
                 {
-                    "active_since": "2019-10-01",
                     "all_electric": True,
                     "daily_allowance_per_territory_kWh": {
-                        "P": 27.4,
-                        "Q": 27.4,
-                        "R": 28.1,
-                        "S": 24.9,
                         "T": 13.6,
-                        "V": 16.9,
-                        "W": 20,
-                        "X": 15.4,
-                        "Y": 25.3,
-                        "Z": 16.5,
                     },
                     "date_begin": "Oct 1",
                     "date_end": "May 31",
-                    "deprecated_on": None,
-                    "description": "Daily allowance for Tier 1 pricing in Winter when using electric heating",
+                },
+                {
+                    "all_electric": True,
+                    "daily_allowance_per_territory_kWh": {
+                        "T": 7.5,
+                    },
+                    "date_begin": "Jun 1",
+                    "date_end": "Sep 30",
                 }
             ],
         }
     ]
     mytz = pytz.timezone("America/Los_Angeles")
-    results = generate_datapoints(RATES, "2021-10-01", "2021-10-03", mytz)
+    results = generate_datapoints(RATES, "2021-12-31", "2022-01-02", mytz)
 
     print("\n".join(results))
     assert (
+        "allowances,provider=foo,territory=T,all_electric=1 allowance=7.5 {}".format(
+            int(mytz.localize(datetime.datetime(2021, 12, 31)).timestamp())
+        )
+        not in results
+    )
+    assert (
         "allowances,provider=foo,territory=T,all_electric=1 allowance=13.6 {}".format(
-            int(mytz.localize(datetime.datetime(2021, 10, 2)).timestamp())
+            int(mytz.localize(datetime.datetime(2021, 12, 31)).timestamp())
+        )
+        in results
+    )
+    # Check for duplicates when generating more than a year
+    assert (
+        "allowances,provider=foo,territory=T,all_electric=1 allowance=7.5 {}".format(
+            int(mytz.localize(datetime.datetime(2022, 1, 2)).timestamp())
+        )
+        not in results
+    )
+    # Check for values generated for multiple years
+    assert (
+        "allowances,provider=foo,territory=T,all_electric=1 allowance=13.6 {}".format(
+            int(mytz.localize(datetime.datetime(2022, 1, 2)).timestamp())
         )
         in results
     )
@@ -266,6 +282,52 @@ def test_dst_fall_back():
     assert (
         "rates,provider=foo,plan=bar,tier=1 price=0.5 {}".format(
             int(mytz.localize(datetime.datetime(2021, 11, 7,20,0,0)).timestamp())
+        )
+        in results
+    )
+
+def test_prices_over_multiple_years():
+    RATES = [
+        {
+            "provider": "foo",
+            "plans": [
+                {
+                    "name": "bar",
+                    "rates": [
+                        {
+                            "price": 0.1,
+                            "date_begin": "Jan 1",
+                            "date_end": "May 31",
+                        },
+                        {
+                            "price": 0.5,
+                            "date_begin": "Jun 1",
+                            "date_end": "Dec 31",
+                        },
+                    ],
+                }
+            ],
+        }
+    ]
+    mytz = pytz.timezone("America/Los_Angeles")
+    results = generate_datapoints(RATES, "2021-12-31", "2022-01-01", mytz)
+
+    print("\n".join(results))
+    assert (
+        "rates,provider=foo,plan=bar,tier=1 price=0.5 {}".format(
+            int(mytz.localize(datetime.datetime(2021, 12, 31)).timestamp())
+        )
+        in results
+    )
+    assert (
+        "rates,provider=foo,plan=bar,tier=1 price=0.5 {}".format(
+            int(mytz.localize(datetime.datetime(2022, 1, 1)).timestamp())
+        )
+        not in results
+    )
+    assert (
+        "rates,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
+            int(mytz.localize(datetime.datetime(2022, 1, 1)).timestamp())
         )
         in results
     )

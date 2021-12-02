@@ -82,6 +82,7 @@ def generate_datapoints(
     This is the main function that generates datapoints for both prices (rates) and limits (baseline allowance)
     """
 
+    #import pdb; pdb.set_trace()
     datapoints = []
     requested_fill_from_dt = iso_day_to_dt(date_from, timezone)
     requested_fill_until_dt = iso_day_to_dt(date_until, timezone)
@@ -114,48 +115,51 @@ def generate_datapoints(
             fill_from_dt = max(requested_fill_from_dt, allowance_begin_dt)
             fill_until_dt = min(requested_fill_until_dt, allowance_end_dt)
 
-            allowance_season_begin_dt = timezone.localize(
-                datetime.strptime(
-                    f"{allowance.get('date_begin', 'Jan 1')} {requested_fill_from_dt.year}",
-                    "%b %d %Y",
-                )
-            )
-            allowance_season_end_dt = timezone.localize(
-                datetime.strptime(
-                    f"{allowance.get('date_end', 'Dec 31')} {requested_fill_until_dt.year}",
-                    "%b %d %Y",
-                )
-            )
-            allowance_season_fill_from_dt = max(
-                allowance_season_begin_dt,
-                requested_fill_from_dt,
-                allowance_begin_dt,
-            )
-            if allowance_season_begin_dt > allowance_season_end_dt:
-                allowance_season_end_dt += timedelta(days=365)
-            allowance_season_fill_until_dt = min(
-                allowance_season_end_dt, requested_fill_until_dt, allowance_end_dt
-            )
-            day = allowance_season_fill_from_dt
-            while day <= allowance_season_fill_until_dt:
-                for territory, daily_allowance_kwh in allowance.get(
-                    "daily_allowance_per_territory_kWh", {}
-                ).items():
-                    datapoints.extend(
-                        Datapoint(
-                            timestamp=int(day.timestamp()),
-                            measurement="allowances",
-                            values={"allowance": daily_allowance_kwh},
-                            tags={
-                                "provider": provider["provider"],
-                                "territory": territory,
-                                "all_electric": all_electric,
-                            },
-                        ).dump()
+            year=fill_from_dt.year
+            while year <= fill_until_dt.year:
+                allowance_season_begin_dt = timezone.localize(
+                    datetime.strptime(
+                        f"{allowance.get('date_begin', 'Jan 1')} {year}",
+                        "%b %d %Y",
                     )
-                day = timezone.localize(
-                    day.replace(tzinfo=None) + timedelta(days=1)
                 )
+                allowance_season_end_dt = timezone.localize(
+                    datetime.strptime(
+                        f"{allowance.get('date_end', 'Dec 31')} {year}",
+                        "%b %d %Y",
+                    )
+                )
+                allowance_season_fill_from_dt = max(
+                    allowance_season_begin_dt,
+                    requested_fill_from_dt,
+                    allowance_begin_dt,
+                )
+                if allowance_season_begin_dt > allowance_season_end_dt:
+                    allowance_season_end_dt += timedelta(days=365)
+                allowance_season_fill_until_dt = min(
+                    allowance_season_end_dt, requested_fill_until_dt, allowance_end_dt
+                )
+                day = allowance_season_fill_from_dt
+                while day <= allowance_season_fill_until_dt:
+                    for territory, daily_allowance_kwh in allowance.get(
+                        "daily_allowance_per_territory_kWh", {}
+                    ).items():
+                        datapoints.extend(
+                            Datapoint(
+                                timestamp=int(day.timestamp()),
+                                measurement="allowances",
+                                values={"allowance": daily_allowance_kwh},
+                                tags={
+                                    "provider": provider["provider"],
+                                    "territory": territory,
+                                    "all_electric": all_electric,
+                                },
+                            ).dump()
+                        )
+                    day = timezone.localize(
+                        day.replace(tzinfo=None) + timedelta(days=1)
+                    )
+                year += 1
 
         # Generate the rates (or prices) timeseries
         for plan in provider.get("plans", []):
