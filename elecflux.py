@@ -114,48 +114,51 @@ def generate_datapoints(
             fill_from_dt = max(requested_fill_from_dt, allowance_begin_dt)
             fill_until_dt = min(requested_fill_until_dt, allowance_end_dt)
 
-            allowance_season_begin_dt = timezone.localize(
-                datetime.strptime(
-                    f"{allowance.get('date_begin', 'Jan 1')} {requested_fill_from_dt.year}",
-                    "%b %d %Y",
-                )
-            )
-            allowance_season_end_dt = timezone.localize(
-                datetime.strptime(
-                    f"{allowance.get('date_end', 'Dec 31')} {requested_fill_until_dt.year}",
-                    "%b %d %Y",
-                )
-            )
-            allowance_season_fill_from_dt = max(
-                allowance_season_begin_dt,
-                requested_fill_from_dt,
-                allowance_begin_dt,
-            )
-            if allowance_season_begin_dt > allowance_season_end_dt:
-                allowance_season_end_dt += timedelta(days=365)
-            allowance_season_fill_until_dt = min(
-                allowance_season_end_dt, requested_fill_until_dt, allowance_end_dt
-            )
-            day = allowance_season_fill_from_dt
-            while day <= allowance_season_fill_until_dt:
-                for territory, daily_allowance_kwh in allowance.get(
-                    "daily_allowance_per_territory_kWh", {}
-                ).items():
-                    datapoints.extend(
-                        Datapoint(
-                            timestamp=int(day.timestamp()),
-                            measurement="allowances",
-                            values={"allowance": daily_allowance_kwh},
-                            tags={
-                                "provider": provider["provider"],
-                                "territory": territory,
-                                "all_electric": all_electric,
-                            },
-                        ).dump()
+            year=fill_from_dt.year
+            while year <= fill_until_dt.year:
+                allowance_season_begin_dt = timezone.localize(
+                    datetime.strptime(
+                        f"{allowance.get('date_begin', 'Jan 1')} {year}",
+                        "%b %d %Y",
                     )
-                day = timezone.localize(
-                    day.replace(tzinfo=None) + timedelta(days=1)
                 )
+                allowance_season_end_dt = timezone.localize(
+                    datetime.strptime(
+                        f"{allowance.get('date_end', 'Dec 31')} {year}",
+                        "%b %d %Y",
+                    )
+                )
+                allowance_season_fill_from_dt = max(
+                    allowance_season_begin_dt,
+                    requested_fill_from_dt,
+                    allowance_begin_dt,
+                )
+                if allowance_season_begin_dt > allowance_season_end_dt:
+                    allowance_season_end_dt += timedelta(days=365)
+                allowance_season_fill_until_dt = min(
+                    allowance_season_end_dt, requested_fill_until_dt, allowance_end_dt
+                )
+                day = allowance_season_fill_from_dt
+                while day <= allowance_season_fill_until_dt:
+                    for territory, daily_allowance_kwh in allowance.get(
+                        "daily_allowance_per_territory_kWh", {}
+                    ).items():
+                        datapoints.extend(
+                            Datapoint(
+                                timestamp=int(day.timestamp()),
+                                measurement="allowances",
+                                values={"allowance": daily_allowance_kwh},
+                                tags={
+                                    "provider": provider["provider"],
+                                    "territory": territory,
+                                    "all_electric": all_electric,
+                                },
+                            ).dump()
+                        )
+                    day = timezone.localize(
+                        day.replace(tzinfo=None) + timedelta(days=1)
+                    )
+                year += 1
 
         # Generate the rates (or prices) timeseries
         for plan in provider.get("plans", []):
@@ -179,102 +182,104 @@ def generate_datapoints(
                 continue
             fill_from_dt = max(requested_fill_from_dt, plan_begin_dt)
             fill_until_dt = min(requested_fill_until_dt, plan_end_dt)
+            year=fill_from_dt.year
+            while year <= fill_until_dt.year:
+                for rate in plan["rates"]:
 
-            for rate in plan["rates"]:
-
-                rate_begin_dt = timezone.localize(
-                    datetime.strptime(
-                        f"{rate.get('date_begin', 'Jan 1')} {requested_fill_from_dt.year}",
-                        "%b %d %Y",
-                    )
-                )
-                rate_end_dt = timezone.localize(
-                    datetime.strptime(
-                        f"{rate.get('date_end', 'Dec 31')} {requested_fill_until_dt.year}",
-                        "%b %d %Y",
-                    )
-                )
-                rate_fill_from_dt = max(
-                    rate_begin_dt, requested_fill_from_dt, plan_begin_dt
-                )
-                if rate_begin_dt > rate_end_dt:
-                    rate_end_dt += timedelta(days=365)
-                rate_fill_until_dt = min(
-                    rate_end_dt, requested_fill_until_dt, plan_end_dt
-                )
-                day = rate_fill_from_dt
-                rate_valid_days = set(
-                    rate.get(
-                        "days",
-                        [
-                            "Monday",
-                            "Tuesday",
-                            "Wednesday",
-                            "Thursday",
-                            "Friday",
-                            "Saturday",
-                            "Sunday",
-                        ],
-                    )
-                )
-                tags = {
-                    "provider": provider["provider"],
-                    "plan": plan.get("name", "default_plan"),
-                    "tier": rate.get("tier", 1),
-                }
-
-                while day <= rate_fill_until_dt:
-                    if day.strftime("%A") not in rate_valid_days:
-                        day = timezone.localize(
-                            day.replace(tzinfo=None) + timedelta(days=1)
+                    rate_begin_dt = timezone.localize(
+                        datetime.strptime(
+                            f"{rate.get('date_begin', 'Jan 1')} {year}",
+                            "%b %d %Y",
                         )
-                        continue
+                    )
+                    rate_end_dt = timezone.localize(
+                        datetime.strptime(
+                            f"{rate.get('date_end', 'Dec 31')} {year}",
+                            "%b %d %Y",
+                        )
+                    )
+                    rate_fill_from_dt = max(
+                        rate_begin_dt, requested_fill_from_dt, plan_begin_dt
+                    )
+                    if rate_begin_dt > rate_end_dt:
+                        rate_end_dt += timedelta(days=365)
+                    rate_fill_until_dt = min(
+                        rate_end_dt, requested_fill_until_dt, plan_end_dt
+                    )
+                    day = rate_fill_from_dt
+                    rate_valid_days = set(
+                        rate.get(
+                            "days",
+                            [
+                                "Monday",
+                                "Tuesday",
+                                "Wednesday",
+                                "Thursday",
+                                "Friday",
+                                "Saturday",
+                                "Sunday",
+                            ],
+                        )
+                    )
+                    tags = {
+                        "provider": provider["provider"],
+                        "plan": plan.get("name", "default_plan"),
+                        "tier": rate.get("tier", 1),
+                    }
 
-                    hour_begin = int(rate.get("time_begin", 0000))
-                    timestamp = int(
-                        (
-                            timezone.localize(
-                                day.replace(tzinfo=None)
-                                + timedelta(
-                                    seconds=get_offset_timestamp_from_hour(hour_begin)
-                                )
+                    while day <= rate_fill_until_dt:
+                        if day.strftime("%A") not in rate_valid_days:
+                            day = timezone.localize(
+                                day.replace(tzinfo=None) + timedelta(days=1)
                             )
-                        ).timestamp()
-                    )
+                            continue
 
-                    datapoints.extend(
-                        Datapoint(
-                            timestamp=timestamp,
-                            measurement="rates",
-                            values={"price": rate.get("price"), "enabled": 1},
-                            tags=tags,
-                        ).dump()
-                    )
-                    hour_end = rate.get("time_end")
-                    if hour_end is not None:
-                        timestamp_end = int(
+                        hour_begin = int(rate.get("time_begin", 0000))
+                        timestamp = int(
                             (
                                 timezone.localize(
                                     day.replace(tzinfo=None)
                                     + timedelta(
-                                        seconds=get_offset_timestamp_from_hour(
-                                            int(hour_end)
-                                        )
+                                        seconds=get_offset_timestamp_from_hour(hour_begin)
                                     )
                                 )
                             ).timestamp()
                         )
+
                         datapoints.extend(
                             Datapoint(
                                 timestamp=timestamp,
                                 measurement="rates",
-                                values={"enabled": 0},
+                                values={"price": rate.get("price"), "enabled": 1},
                                 tags=tags,
                             ).dump()
                         )
-                    day = timezone.localize(
-                        day.replace(tzinfo=None) + timedelta(days=1)
-                    )
+                        hour_end = rate.get("time_end")
+                        if hour_end is not None:
+                            timestamp_end = int(
+                                (
+                                    timezone.localize(
+                                        day.replace(tzinfo=None)
+                                        + timedelta(
+                                            seconds=get_offset_timestamp_from_hour(
+                                                int(hour_end)
+                                            )
+                                        )
+                                    )
+                                ).timestamp()
+                            )
+                            datapoints.extend(
+                                Datapoint(
+                                    timestamp=timestamp,
+                                    measurement="rates",
+                                    values={"enabled": 0},
+                                    tags=tags,
+                                ).dump()
+                            )
+                        day = timezone.localize(
+                            day.replace(tzinfo=None) + timedelta(days=1)
+                        )
+                year += 1
     return datapoints
 
 
