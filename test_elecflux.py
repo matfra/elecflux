@@ -310,7 +310,7 @@ def test_prices_over_multiple_years():
         }
     ]
     mytz = pytz.timezone("America/Los_Angeles")
-    results = generate_datapoints(RATES, "2021-12-31", "2022-01-01", mytz)
+    results = generate_datapoints(RATES, "2021-12-31", "2024-01-01", mytz)
 
     print("\n".join(results))
     assert (
@@ -328,6 +328,18 @@ def test_prices_over_multiple_years():
     assert (
         "rates,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
             int(mytz.localize(datetime.datetime(2022, 1, 1)).timestamp())
+        )
+        in results
+    )
+    assert (
+        "rates,provider=foo,plan=bar,tier=1 price=0.5 {}".format(
+            int(mytz.localize(datetime.datetime(2024, 1, 1)).timestamp())
+        )
+        not in results
+    )
+    assert (
+        "rates,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
+            int(mytz.localize(datetime.datetime(2024, 1, 1)).timestamp())
         )
         in results
     )
