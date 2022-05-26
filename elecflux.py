@@ -185,7 +185,6 @@ def generate_datapoints(
             year=fill_from_dt.year
             while year <= fill_until_dt.year:
                 for rate in plan["rates"]:
-
                     rate_begin_dt = timezone.localize(
                         datetime.strptime(
                             f"{rate.get('date_begin', 'Jan 1')} {year}",
@@ -198,6 +197,9 @@ def generate_datapoints(
                             "%b %d %Y",
                         )
                     )
+#TODO add test for that
+                    if rate_begin_dt > rate_end_dt:
+                        rate_begin_dt -= timedelta(days=365)
                     rate_fill_from_dt = max(
                         rate_begin_dt, requested_fill_from_dt, plan_begin_dt
                     )
@@ -368,7 +370,6 @@ if __name__ == "__main__":
         help="Password can also be passed as a ENV VAR INFLUXDB_PASSWORD",
         default=os.getenv("INFLUXDB_PASSWORD", ""),
     )
-
     parser.add_argument(
         "-e",
         "--date-end",
