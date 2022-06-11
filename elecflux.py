@@ -65,7 +65,7 @@ class Datapoint:
             result.append(
                 f"{self.measurement},{','.join(tag_strings)} {k}={v} {self.timestamp}"
             )
-        return result
+        return "\n".join(result)
 
 
 def get_offset_timestamp_from_hour(hour: int) -> int:
