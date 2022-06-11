@@ -271,7 +271,7 @@ def generate_datapoints(
                                 )
                             )
 
-                            if hour_begin > hour_end:  # Create a midnight datapoint??
+                            if hour_begin > hour_end and not hour_end == 0:  # Create a midnight datapoint??
                                 datapoints.append(
                                     Datapoint(
                                         d=timezone.localize(
@@ -306,14 +306,14 @@ def check_for_overlapping_plans(datapoints):
         v = data.values
         d = data.d
 
+        key=str(tags) + str(m)
         if d not in tags_by_date:
-            tags_by_date[d] = []
-        if (tags, m) in tags_by_date[d]:
+            tags_by_date[d]={}
+        if key in tags_by_date[d]:
             raise ValueError(
-                f'Overlapping plans detected for measurement "{m}" detected at ts: {d}:\n\t{tags} is overlapping with {tags_by_date[d]}'
+                f'Overlapping plans detected at date: {d}:\n Trying to insert     {data}\n but there is already {tags_by_date[d][key]}'
             )
-        else:
-            tags_by_date[d].append((tags, m))
+        tags_by_date[d][key]=data
 
 
 def load_rates_from_file(rates_file: str) -> Dict:

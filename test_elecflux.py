@@ -496,3 +496,49 @@ def test_midnight_datapoint():
         )
         in results
     )
+
+
+def test_end_hour_midnight():
+    RATES = [
+        {
+            "provider": "foo",
+            "plans": [
+                {
+                    "name": "bar",
+                    "rates": [
+                        {
+                            "price": 0.1,
+                            "time_begin": 0000,
+                            "time_end": 1200,
+                        },
+                        {
+                            "price": 0.5,
+                            "time_begin": 1200,
+                            "time_end": 0000,
+                        },
+                    ],
+                }
+            ],
+        }
+    ]
+    mytz = pytz.timezone("America/Los_Angeles")
+    results = generate_datapoints(RATES, "2020-02-02", "2020-02-02", mytz)
+
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2020, 2, 2, 0, 0, 0)),
+            measurement="rates",
+            values={"price": 0.1},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        in results
+    )
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2020, 2, 2, 0, 0, 0)),
+            measurement="rates",
+            values={"price": 0.5},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        not in results
+    )
