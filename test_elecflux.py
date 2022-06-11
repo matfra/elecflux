@@ -1,4 +1,9 @@
-from elecflux import get_offset_timestamp_from_hour, iso_day_to_dt, generate_datapoints
+from elecflux import (
+    get_offset_timestamp_from_hour,
+    iso_day_to_dt,
+    generate_datapoints,
+    Datapoint,
+)
 import pytest
 import pytz
 import datetime
@@ -35,50 +40,89 @@ def test_generate_datapoints_multiple_rates():
                         {
                             "tier": 1,
                             "price": 0.26,
-                            "date_begin": "Jun 1",
+                            "date_begin": "Jan 2",
                             "date_end": "Sep 30",
                         },
                         {
                             "tier": 1,
                             "price": 0.9,
                             "date_begin": "Oct 1",
-                            "date_end": "May 31",
+                            "date_end": "Jan 1",
                         },
                     ],
                 }
             ],
         }
     ]
+    mytz = pytz.timezone("UTC")
+    results = generate_datapoints(RATES, "1970-01-01", "1970-01-02", mytz)
+
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(1970, 1, 2)),
+            measurement="rates",
+            values={"price": 0.26},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        in results
+    )
+
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(1970, 1, 1)),
+            measurement="rates",
+            values={"price": 0.9},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        in results
+    )
+
+
+def test_generate_datapoints_overlapping_plans():
+    RATES = [
+        {
+            "provider": "foo",
+            "plans": [
+                {
+                    "name": "bar",
+                    "deprecated_on": None,
+                    "active_since": "2020-07-01",
+                    "rates": [
+                        {
+                            "price": 0.26,
+                            "date_begin": "Jun 1",
+                            "date_end": "Sep 30",
+                        },
+                        {
+                            "price": 0.9,
+                            "date_begin": "Oct 1",
+                            "date_end": "May 31",
+                        },
+                    ],
+                },
+                {
+                    "name": "bar",
+                    "deprecated_on": "2020-07-31",
+                    "rates": [
+                        {
+                            "price": 0.1,
+                            "date_begin": "Jun 1",
+                            "date_end": "Sep 30",
+                        },
+                        {
+                            "price": 0.9,
+                            "date_begin": "Oct 1",
+                            "date_end": "May 31",
+                        },
+                    ],
+                },
+            ],
+        }
+    ]
     mytz = pytz.timezone("America/Los_Angeles")
-    results = generate_datapoints(RATES, "2020-09-29", "2020-10-03", mytz)
-
-    print("\n".join(results))
-    assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.26 {}".format(
-            int(mytz.localize(datetime.datetime(2020, 9, 30)).timestamp())
-        )
-        in results
-    )
-    assert (
-        "rates,provider=foo,plan=bar,tier=1 enabled=1 {}".format(
-            int(mytz.localize(datetime.datetime(2020, 9, 30)).timestamp())
-        )
-        in results
-    )
-
-    assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.9 {}".format(
-            int(mytz.localize(datetime.datetime(2020, 10, 1)).timestamp())
-        )
-        in results
-    )
-    # Test the case when there is no end time
-    assert (
-        "rates,provider=foo,plan=bar,tier=1 enabled=0 {}".format(
-            int(mytz.localize(datetime.datetime(2020, 10, 2)).timestamp())
-        )
-        not in results
-    )
+    with pytest.raises(Exception) as e_info:
+        generate_datapoints(RATES, "2020-07-29", "2020-08-02", mytz)
+        print(e_info)
 
 
 def test_generate_datapoints_expired_plan():
@@ -89,6 +133,7 @@ def test_generate_datapoints_expired_plan():
                 {
                     "name": "bar",
                     "deprecated_on": None,
+                    "active_since": "2020-08-01",
                     "rates": [
                         {
                             "price": 0.26,
@@ -123,19 +168,43 @@ def test_generate_datapoints_expired_plan():
     ]
     mytz = pytz.timezone("America/Los_Angeles")
     results = generate_datapoints(RATES, "2020-07-29", "2020-08-02", mytz)
-
-    print("\n".join(results))
     assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
-            int(mytz.localize(datetime.datetime(2020, 7, 31)).timestamp())
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2020, 7, 31)),
+            measurement="rates",
+            values={"price": 0.1},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        in results
+    )
+
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2020, 7, 31)),
+            measurement="rates",
+            values={"price": 0.26},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        not in results
+    )
+
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2020, 8, 1)),
+            measurement="rates",
+            values={"price": 0.26},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
         )
         in results
     )
     assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.26 {}".format(
-            int(mytz.localize(datetime.datetime(2020, 8, 1)).timestamp())
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2020, 8, 1)),
+            measurement="rates",
+            values={"price": 0.1},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
         )
-        in results
+        not in results
     )
 
 
@@ -165,16 +234,22 @@ def test_generate_datapoints_weekdays_plan():
     mytz = pytz.timezone("America/Los_Angeles")
     results = generate_datapoints(RATES, "2021-10-01", "2021-10-03", mytz)
 
-    print("\n".join(results))
     assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.2 {}".format(
-            int(mytz.localize(datetime.datetime(2021, 10, 2)).timestamp())
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2021, 10, 2)),
+            measurement="rates",
+            values={"price": 0.2},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
         )
         in results
     )
+
     assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.4 {}".format(
-            int(mytz.localize(datetime.datetime(2021, 10, 3)).timestamp())
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2021, 10, 3)),
+            measurement="rates",
+            values={"price": 0.4},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
         )
         in results
     )
@@ -200,40 +275,50 @@ def test_generate_datapoints_allowances():
                     },
                     "date_begin": "Jun 1",
                     "date_end": "Sep 30",
-                }
+                },
             ],
         }
     ]
     mytz = pytz.timezone("America/Los_Angeles")
-    results = generate_datapoints(RATES, "2021-12-31", "2022-01-02", mytz)
+    results = generate_datapoints(RATES, "2005-05-31", "2005-06-01", mytz)
+    assert len(results) == 2
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2005, 6, 1)),
+            measurement="allowances",
+            values={"allowance": 7.5},
+            tags={"provider": "foo", "territory": "T", "all_electric": 1},
+        )
+        in results
+    )
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2005, 5, 31)),
+            measurement="allowances",
+            values={"allowance": 13.6},
+            tags={"provider": "foo", "territory": "T", "all_electric": 1},
+        )
+        in results
+    )
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2005, 6, 1)),
+            measurement="allowances",
+            values={"allowance": 13.6},
+            tags={"provider": "foo", "territory": "T", "all_electric": 1},
+        )
+        not in results
+    )
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2005, 5, 31)),
+            measurement="allowances",
+            values={"allowance": 7.5},
+            tags={"provider": "foo", "territory": "T", "all_electric": 1},
+        )
+        not in results
+    )
 
-    print("\n".join(results))
-    assert (
-        "allowances,provider=foo,territory=T,all_electric=1 allowance=7.5 {}".format(
-            int(mytz.localize(datetime.datetime(2021, 12, 31)).timestamp())
-        )
-        not in results
-    )
-    assert (
-        "allowances,provider=foo,territory=T,all_electric=1 allowance=13.6 {}".format(
-            int(mytz.localize(datetime.datetime(2021, 12, 31)).timestamp())
-        )
-        in results
-    )
-    # Check for duplicates when generating more than a year
-    assert (
-        "allowances,provider=foo,territory=T,all_electric=1 allowance=7.5 {}".format(
-            int(mytz.localize(datetime.datetime(2022, 1, 2)).timestamp())
-        )
-        not in results
-    )
-    # Check for values generated for multiple years
-    assert (
-        "allowances,provider=foo,territory=T,all_electric=1 allowance=13.6 {}".format(
-            int(mytz.localize(datetime.datetime(2022, 1, 2)).timestamp())
-        )
-        in results
-    )
 
 def test_dst_fall_back():
     RATES = [
@@ -242,21 +327,16 @@ def test_dst_fall_back():
             "plans": [
                 {
                     "name": "bar",
-                    "deprecated_on": None,
                     "rates": [
                         {
                             "price": 0.1,
                             "time_begin": 1000,
                             "time_end": 2000,
-                            "date_begin": "Jan 1",
-                            "date_end": "Dec 31",
                         },
                         {
                             "price": 0.5,
                             "time_begin": 2000,
                             "time_end": 1000,
-                            "date_begin": "Jan 1",
-                            "date_end": "Dec 31",
                         },
                     ],
                 }
@@ -265,26 +345,35 @@ def test_dst_fall_back():
     ]
     mytz = pytz.timezone("America/Los_Angeles")
     results = generate_datapoints(RATES, "2021-11-06", "2021-11-07", mytz)
+    assert len(results) == 2 * 3  # 2 days with 3 points: midnight, 10AM, 10PM
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2021, 11, 6, 10, 0, 0)),
+            measurement="rates",
+            values={"price": 0.1},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        in results
+    )
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2021, 11, 7, 10, 0, 0)),
+            measurement="rates",
+            values={"price": 0.1},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        in results
+    )
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2021, 11, 7, 20, 0, 0)),
+            measurement="rates",
+            values={"price": 0.5},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        in results
+    )
 
-    print("\n".join(results))
-    assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
-            int(mytz.localize(datetime.datetime(2021, 11, 6,10,0,0)).timestamp())
-        )
-        in results
-    )
-    assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
-            int(mytz.localize(datetime.datetime(2021, 11, 7,10,0,0)).timestamp())
-        )
-        in results
-    )
-    assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.5 {}".format(
-            int(mytz.localize(datetime.datetime(2021, 11, 7,20,0,0)).timestamp())
-        )
-        in results
-    )
 
 def test_prices_over_multiple_years():
     RATES = [
@@ -311,38 +400,52 @@ def test_prices_over_multiple_years():
     ]
     mytz = pytz.timezone("America/Los_Angeles")
     results = generate_datapoints(RATES, "2021-12-31", "2024-01-01", mytz)
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2021, 12, 31)),
+            measurement="rates",
+            values={"price": 0.5},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        in results
+    )
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2022, 1, 1)),
+            measurement="rates",
+            values={"price": 0.5},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        not in results
+    )
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2022, 1, 1)),
+            measurement="rates",
+            values={"price": 0.1},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        in results
+    )
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2024, 1, 1)),
+            measurement="rates",
+            values={"price": 0.5},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        not in results
+    )
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2024, 1, 1)),
+            measurement="rates",
+            values={"price": 0.1},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        in results
+    )
 
-    print("\n".join(results))
-    assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.5 {}".format(
-            int(mytz.localize(datetime.datetime(2021, 12, 31)).timestamp())
-        )
-        in results
-    )
-    assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.5 {}".format(
-            int(mytz.localize(datetime.datetime(2022, 1, 1)).timestamp())
-        )
-        not in results
-    )
-    assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
-            int(mytz.localize(datetime.datetime(2022, 1, 1)).timestamp())
-        )
-        in results
-    )
-    assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.5 {}".format(
-            int(mytz.localize(datetime.datetime(2024, 1, 1)).timestamp())
-        )
-        not in results
-    )
-    assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.1 {}".format(
-            int(mytz.localize(datetime.datetime(2024, 1, 1)).timestamp())
-        )
-        in results
-    )
 
 def test_midnight_datapoint():
     RATES = [
@@ -375,16 +478,21 @@ def test_midnight_datapoint():
     mytz = pytz.timezone("America/Los_Angeles")
     results = generate_datapoints(RATES, "2021-11-11", "2021-11-13", mytz)
 
-    print("\n".join(results))
     assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.5 {}".format(
-            int(mytz.localize(datetime.datetime(2021, 11, 11,20,0,0)).timestamp())
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2021, 11, 11, 20, 0, 0)),
+            measurement="rates",
+            values={"price": 0.5},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
         )
         in results
     )
     assert (
-        "rates,provider=foo,plan=bar,tier=1 price=0.5 {}".format(
-            int(mytz.localize(datetime.datetime(2021, 11, 12,0,0,0)).timestamp())
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2021, 11, 12, 0, 0, 0)),
+            measurement="rates",
+            values={"price": 0.5},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
         )
         in results
     )
