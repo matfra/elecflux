@@ -14,16 +14,15 @@ More details on the YAML format in the rates.yaml file
 """
 
 __author__ = "Mathieu Frappier"
-__version__ = "0.1.0"
+__version__ = "0.2.1"
 __license__ = "MIT"
 
-from influxdb import InfluxDBClient  # influx v1
-from typing import Dict, Optional, List, Union
+from typing import Dict, List, Union
 import os
 import yaml
-import time
 import argparse
-from datetime import date, datetime, timedelta
+from datetime import datetime as dt
+from datetime import timedelta
 from logzero import logger
 
 from yaml.loader import FullLoader
@@ -33,7 +32,7 @@ import pytz
 class Datapoint:
     def __init__(
         self,
-        timestamp: int,
+        d: dt,
         measurement: str,
         values: Dict[str, Union[float, int]],
         tags: Dict,
@@ -41,7 +40,20 @@ class Datapoint:
         self.measurement = measurement
         self.values = values
         self.tags = tags
-        self.timestamp = timestamp
+        self.d = d
+        self.timestamp = int(dt.timestamp(self.d))
+
+    def __eq__(self, other):
+
+        return (
+            self.d == other.d
+            and self.measurement == other.measurement
+            and self.values == other.values
+            and self.tags == other.tags
+        )
+
+    def __repr__(self):
+        return f"{self.measurement} {self.values} {self.tags} {self.d}"
 
     def dump(self):
         tag_strings = []
@@ -49,10 +61,11 @@ class Datapoint:
             tag_strings.append(f"{k}={v}")
         result = []
         for k, v in self.values.items():
+
             result.append(
                 f"{self.measurement},{','.join(tag_strings)} {k}={v} {self.timestamp}"
             )
-        return result
+        return "\n".join(result)
 
 
 def get_offset_timestamp_from_hour(hour: int) -> int:
@@ -60,7 +73,7 @@ def get_offset_timestamp_from_hour(hour: int) -> int:
 
 
 def iso_day_to_dt(d: str, timezone: pytz.timezone):
-    return timezone.localize(datetime(*list(map(int, d.split("-")))))
+    return timezone.localize(dt(*list(map(int, d.split("-")))))
 
 
 def datapoints_to_csv(dpts: List[Datapoint], database_name: str) -> str:
@@ -70,7 +83,7 @@ def datapoints_to_csv(dpts: List[Datapoint], database_name: str) -> str:
         database_name
     )
     for d in dpts:
-        result += "\n" + d
+        result += "\n" + d.dump()
 
     return result
 
@@ -93,7 +106,7 @@ def generate_datapoints(
             allowance_begin_dt = iso_day_to_dt(
                 str(allowance_begin_date)
                 if allowance_begin_date is not None
-                else "2000-01-01",  # 21st century+ only
+                else "1970-01-01",
                 timezone,
             )
             allowance_end_date = allowance.get("deprecated_on")
@@ -114,27 +127,31 @@ def generate_datapoints(
             fill_from_dt = max(requested_fill_from_dt, allowance_begin_dt)
             fill_until_dt = min(requested_fill_until_dt, allowance_end_dt)
 
-            year=fill_from_dt.year
+            year = fill_from_dt.year
             while year <= fill_until_dt.year:
                 allowance_season_begin_dt = timezone.localize(
-                    datetime.strptime(
+                    dt.strptime(
                         f"{allowance.get('date_begin', 'Jan 1')} {year}",
                         "%b %d %Y",
                     )
                 )
                 allowance_season_end_dt = timezone.localize(
-                    datetime.strptime(
+                    dt.strptime(
                         f"{allowance.get('date_end', 'Dec 31')} {year}",
                         "%b %d %Y",
                     )
                 )
+
+                if allowance_season_end_dt < allowance_season_begin_dt:
+                    allowance_season_begin_dt -= timedelta(days=365)
+                elif allowance_season_begin_dt > allowance_season_end_dt:
+                    allowance_season_end_dt += timedelta(days=365)
+
                 allowance_season_fill_from_dt = max(
                     allowance_season_begin_dt,
                     requested_fill_from_dt,
                     allowance_begin_dt,
                 )
-                if allowance_season_begin_dt > allowance_season_end_dt:
-                    allowance_season_end_dt += timedelta(days=365)
                 allowance_season_fill_until_dt = min(
                     allowance_season_end_dt, requested_fill_until_dt, allowance_end_dt
                 )
@@ -143,9 +160,9 @@ def generate_datapoints(
                     for territory, daily_allowance_kwh in allowance.get(
                         "daily_allowance_per_territory_kWh", {}
                     ).items():
-                        datapoints.extend(
+                        datapoints.append(
                             Datapoint(
-                                timestamp=int(day.timestamp()),
+                                d=day,
                                 measurement="allowances",
                                 values={"allowance": daily_allowance_kwh},
                                 tags={
@@ -153,7 +170,7 @@ def generate_datapoints(
                                     "territory": territory,
                                     "all_electric": all_electric,
                                 },
-                            ).dump()
+                            )
                         )
                     day = timezone.localize(
                         day.replace(tzinfo=None) + timedelta(days=1)
@@ -164,7 +181,7 @@ def generate_datapoints(
         for plan in provider.get("plans", []):
             plan_begin_date = plan.get("active_since")
             plan_begin_dt = iso_day_to_dt(
-                str(plan_begin_date) if plan_begin_date is not None else "2000-01-01",
+                str(plan_begin_date) if plan_begin_date is not None else "1970-01-01",
                 timezone,
             )
             plan_end_date = plan.get("deprecated_on")
@@ -182,29 +199,29 @@ def generate_datapoints(
                 continue
             fill_from_dt = max(requested_fill_from_dt, plan_begin_dt)
             fill_until_dt = min(requested_fill_until_dt, plan_end_dt)
-            year=fill_from_dt.year
+            year = fill_from_dt.year
             while year <= fill_until_dt.year:
                 for rate in plan["rates"]:
+
                     rate_begin_dt = timezone.localize(
-                        datetime.strptime(
+                        dt.strptime(
                             f"{rate.get('date_begin', 'Jan 1')} {year}",
                             "%b %d %Y",
                         )
                     )
                     rate_end_dt = timezone.localize(
-                        datetime.strptime(
+                        dt.strptime(
                             f"{rate.get('date_end', 'Dec 31')} {year}",
                             "%b %d %Y",
                         )
                     )
-#TODO add test for that
-                    if rate_begin_dt > rate_end_dt:
+                    if rate_end_dt < rate_begin_dt:
                         rate_begin_dt -= timedelta(days=365)
+                    elif rate_begin_dt > rate_end_dt:
+                        rate_end_dt += timedelta(days=365)
                     rate_fill_from_dt = max(
                         rate_begin_dt, requested_fill_from_dt, plan_begin_dt
                     )
-                    if rate_begin_dt > rate_end_dt:
-                        rate_end_dt += timedelta(days=365)
                     rate_fill_until_dt = min(
                         rate_end_dt, requested_fill_until_dt, plan_end_dt
                     )
@@ -237,70 +254,66 @@ def generate_datapoints(
                             continue
 
                         hour_begin = int(rate.get("time_begin", 0000))
-                        timestamp = int(
-                            (
-                                timezone.localize(
-                                    day.replace(tzinfo=None)
-                                    + timedelta(
-                                        seconds=get_offset_timestamp_from_hour(hour_begin)
-                                    )
-                                )
-                            ).timestamp()
-                        )
-
-                        datapoints.extend(
-                            Datapoint(
-                                timestamp=timestamp,
-                                measurement="rates",
-                                values={"price": rate.get("price"), "enabled": 1},
-                                tags=tags,
-                            ).dump()
+                        dh_begin = timezone.localize(
+                            day.replace(tzinfo=None)
+                            + timedelta(
+                                seconds=get_offset_timestamp_from_hour(hour_begin)
+                            )
                         )
                         hour_end = rate.get("time_end")
                         if hour_end is not None:
-                            timestamp_end = int(
-                                (
-                                    timezone.localize(
-                                        day.replace(tzinfo=None)
-                                        + timedelta(
-                                            seconds=get_offset_timestamp_from_hour(
-                                                int(hour_end)
-                                            )
-                                        )
+                            dh_end = timezone.localize(
+                                day.replace(tzinfo=None)
+                                + timedelta(
+                                    seconds=get_offset_timestamp_from_hour(
+                                        int(hour_end)
                                     )
-                                ).timestamp()
-                            )
-                            datapoints.extend(
-                                Datapoint(
-                                    timestamp=timestamp,
-                                    measurement="rates",
-                                    values={"enabled": 0},
-                                    tags=tags,
-                                ).dump()
-                            )
-                            if hour_begin > hour_end:
-                                timestamp = int(
-                                    (
-                                        timezone.localize(
-                                            day.replace(tzinfo=None)
-                                            )
-                                    ).timestamp()
                                 )
+                            )
 
-                                datapoints.extend(
+                            if hour_begin > hour_end and not hour_end == 0:  # Create a midnight datapoint??
+                                datapoints.append(
                                     Datapoint(
-                                        timestamp=timestamp,
+                                        d=timezone.localize(
+                                            day.replace(tzinfo=None)
+                                        ),
                                         measurement="rates",
-                                        values={"price": rate.get("price"), "enabled": 1},
+                                        values={"price": rate.get("price")},
                                         tags=tags,
-                                    ).dump()
+                                    )
                                 )
-
+                        datapoints.append(
+                            Datapoint(
+                                d=timezone.localize(dh_begin.replace(tzinfo=None)),
+                                measurement="rates",
+                                values={"price": rate.get("price")},
+                                tags=tags,
+                            )
+                        )
                         day = timezone.localize(
                             day.replace(tzinfo=None) + timedelta(days=1)
                         )
                 year += 1
+        check_for_overlapping_plans(datapoints)
     return datapoints
+
+
+def check_for_overlapping_plans(datapoints):
+    tags_by_date = {}
+    for data in datapoints:
+        tags = data.tags
+        m = data.measurement
+        v = data.values
+        d = data.d
+
+        key=str(tags) + str(m)
+        if d not in tags_by_date:
+            tags_by_date[d]={}
+        if key in tags_by_date[d]:
+            raise ValueError(
+                f'Overlapping plans detected at date: {d}:\n Trying to insert     {data}\n but there is already {tags_by_date[d][key]}'
+            )
+        tags_by_date[d][key]=data
 
 
 def load_rates_from_file(rates_file: str) -> Dict:
@@ -324,7 +337,7 @@ def main(args):
     if date_begin is None:
         exit(run_daemon(rates, timezone))
     if date_end is None:
-        date_end = datetime.now().strftime("%Y-%m-%d")
+        date_end = dt.now().strftime("%Y-%m-%d")
     datapoints = generate_datapoints(rates, date_begin, date_end, timezone)
     # TODO: Replace this cheap CSV export
     if args.csv is True:
@@ -370,6 +383,7 @@ if __name__ == "__main__":
         help="Password can also be passed as a ENV VAR INFLUXDB_PASSWORD",
         default=os.getenv("INFLUXDB_PASSWORD", ""),
     )
+
     parser.add_argument(
         "-e",
         "--date-end",
