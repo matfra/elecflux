@@ -84,7 +84,60 @@
       - tier: 3
         price: 0.40745
     - name: EV2
+      active_since: "2022-06-01"
+      description: Time-of-Use Electric Vehicule 2
+      rates:
+      - description: Summer Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.55950
+        time_begin: 1600
+        time_end: 2100
+      - description: Summer Part-Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.44901
+        time_begin: 1500
+        time_end: 1600
+      - description: Summer Part-Peak (continued)
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.44901
+        time_begin: 2100
+        time_end: 0000
+      - description: Summer Off-Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.24699
+        time_begin: 0000
+        time_end: 1500
+      - description: Winter full-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.43239
+        time_begin: 1600
+        time_end: 2100
+      - description: Winter part-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.41569
+        time_begin: 1500
+        time_end: 1600
+      - description: Winter part-peak (continued)
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.41569
+        time_begin: 2100
+        time_end: 0000
+      - description: Winter off-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.24699
+        time_begin: 0000
+        time_end: 1500
+    - name: EV2
       active_since: "2022-03-01"
+      deprecated_on: "2022-05-31"
       description: Time-of-Use Electric Vehicule 2
       rates:
       - description: Summer Peak
@@ -243,7 +296,71 @@
 
     # Check your baseline allowance (varies per region/climate and electric heating or not)
     - name: E-TOU-C
+      active_since: "2022-06-01"
+      description: Time-of-Use (Peak Pricing 4-9 p.m. Every Day)
+      rates:
+      - tier: 2
+        description: Summer above baseline peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.48902
+        time_begin: 1600
+        time_end: 2100
+      - tier: 1
+        description: Summer below baseline peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.39848 # 0.48902-0.09054
+        time_begin: 1600
+        time_end: 2100
+      - tier: 2
+        description: Summer above baseline off-peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.42558
+        time_begin: 2100
+        time_end: 1600
+      - tier: 1
+        description: Summer below baseline off-peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.33504 # 0.42558-0.09054
+        time_begin: 2100
+        time_end: 1600
+
+      - tier: 2
+        description: Winter above baseline peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.39193
+        time_begin: 1600
+        time_end: 2100
+      - tier: 1
+        description: Winter below baseline peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.30139 # 0.39193-0.09054
+        time_begin: 1600
+        time_end: 2100
+      - tier: 2
+        description: Winter above baseline off-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.37460
+        time_begin: 2100
+        time_end: 1600
+      - tier: 1
+        description: Winter below baseline off peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.28406 # 0.37460-0.09054
+        time_begin: 2100
+        time_end: 1600
+
+    # Check your baseline allowance (varies per region/climate and electric heating or not)
+    - name: E-TOU-C
       active_since: "2022-03-01"
+      deprecated_on: "2022-05-31"
       description: Time-of-Use (Peak Pricing 4-9 p.m. Every Day)
       rates:
       - tier: 2

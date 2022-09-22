@@ -24,6 +24,8 @@ import argparse
 from datetime import datetime as dt
 from datetime import timedelta
 from logzero import logger
+from influxdb_client import InfluxDBClient
+
 
 from yaml.loader import FullLoader
 import pytz
@@ -63,7 +65,7 @@ class Datapoint:
         for k, v in self.values.items():
 
             result.append(
-                f"{self.measurement},{','.join(tag_strings)} {k}={v} {self.timestamp}"
+                f"{self.measurement},{','.join(tag_strings)} {k}={v} {self.timestamp * 1000000000}"
             )
         return "\n".join(result)
 
@@ -321,7 +323,15 @@ def load_rates_from_file(rates_file: str) -> Dict:
         return yaml.load(rates_file, Loader=FullLoader)
 
 
-def run_daemon(rates, timezone):
+def write_to_influx(datapoints, bucket, influx_url, token, org):
+    #TODO: finish this
+    client = InfluxDBClient(url=influx_url, token=token, org=org)
+    write_api = client.write_api()
+    for datapoint in datapoints:
+        write_api.write(bucket, org, [datapoints])
+
+def run_influx_daemon(rates, timezone, influx_url, token, org):
+
     raise SystemError("Daemon mode is not implemented yet")
     return False
 

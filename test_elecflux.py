@@ -374,6 +374,58 @@ def test_dst_fall_back():
         in results
     )
 
+def test_dst_persits():
+    RATES = [
+        {
+            "provider": "foo",
+            "plans": [
+                {
+                    "name": "bar",
+                    "rates": [
+                        {
+                            "price": 0.1,
+                            "time_begin": 1000,
+                            "time_end": 2000,
+                        },
+                        {
+                            "price": 0.5,
+                            "time_begin": 2000,
+                            "time_end": 1000,
+                        },
+                    ],
+                }
+            ],
+        }
+    ]
+    mytz = pytz.timezone("America/Los_Angeles")
+    results = generate_datapoints(RATES, "2021-01-01", "2021-06-10", mytz)
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2021, 1, 2)),
+            measurement="rates",
+            values={"price": 0.5},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        in results
+    )
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2021, 6, 9, 20)),
+            measurement="rates",
+            values={"price": 0.5},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        in results
+    )
+    assert (
+        Datapoint(
+            d=mytz.localize(datetime.datetime(2021, 6, 9, 10)),
+            measurement="rates",
+            values={"price": 0.1},
+            tags={"provider": "foo", "plan": "bar", "tier": 1},
+        )
+        in results
+    )
 
 def test_prices_over_multiple_years():
     RATES = [

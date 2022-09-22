@@ -1,7 +1,7 @@
 pytest>=3.0.7
 logzero  # see github.com/metachris/logzero
 pyyaml
-influxdb
+influxdb_client
 #dev only
 mock
 black
