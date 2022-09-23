@@ -1,5 +1,6 @@
 pytest>=3.0.7
 logzero  # see github.com/metachris/logzero
+pytz
 pyyaml
 influxdb_client
 #dev only
