@@ -83,8 +83,113 @@
         price: 0.32596
       - tier: 3
         price: 0.40745
+    - name: E-Elec
+      active_since: "2020-01-01"
+      description: The rate plan for an electric-powered home (new since Dec 2022)
+      rates:
+      - description: Summer Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.52979 
+        time_begin: 1600
+        time_end: 2100
+      - description: Summer Part-Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.36791
+        time_begin: 1500
+        time_end: 1600
+      - description: Summer Part-Peak (continued)
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.36791
+        time_begin: 2100
+        time_end: 0000
+      - description: Summer Off-Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.31123
+        time_begin: 0000
+        time_end: 1500
+      - description: Winter full-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.29828
+        time_begin: 1600
+        time_end: 2100
+      - description: Winter part-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.27619
+        time_begin: 1500
+        time_end: 1600
+      - description: Winter part-peak (continued)
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.27619
+        time_begin: 2100
+        time_end: 0000
+      - description: Winter off-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.26233
+        time_begin: 0000
+        time_end: 1500
+    - name: EV2
+      active_since: "2023-01-01"
+      description: Time-of-Use Electric Vehicule 2
+      rates:
+      - description: Summer Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.55422
+        time_begin: 1600
+        time_end: 2100
+      - description: Summer Part-Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.44373
+        time_begin: 1500
+        time_end: 1600
+      - description: Summer Part-Peak (continued)
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.44373
+        time_begin: 2100
+        time_end: 0000
+      - description: Summer Off-Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.24171
+        time_begin: 0000
+        time_end: 1500
+      - description: Winter full-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.42711
+        time_begin: 1600
+        time_end: 2100
+      - description: Winter part-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.41041
+        time_begin: 1500
+        time_end: 1600
+      - description: Winter part-peak (continued)
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.41041
+        time_begin: 2100
+        time_end: 0000
+      - description: Winter off-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.24171
+        time_begin: 0000
+        time_end: 1500
     - name: EV2
       active_since: "2022-06-01"
+      deprecated_on: "2022-12-31"
       description: Time-of-Use Electric Vehicule 2
       rates:
       - description: Summer Peak
@@ -296,7 +401,69 @@
 
     # Check your baseline allowance (varies per region/climate and electric heating or not)
     - name: E-TOU-C
+      active_since: "2023-01-01"
+      description: Time-of-Use (Peak Pricing 4-9 p.m. Every Day)
+      rates:
+      - tier: 2
+        description: Summer above baseline peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.48603 
+        time_begin: 1600
+        time_end: 2100
+      - tier: 1
+        description: Summer below baseline peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.40525  # 0.48603-0.09054
+        time_begin: 1600
+        time_end: 2100
+      - tier: 2
+        description: Summer above baseline off-peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.42259 
+        time_begin: 2100
+        time_end: 1600
+      - tier: 1
+        description: Summer below baseline off-peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.34181 
+        time_begin: 2100
+        time_end: 1600
+
+      - tier: 2
+        description: Winter above baseline peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.39193
+        time_begin: 1600
+        time_end: 2100
+      - tier: 1
+        description: Winter below baseline peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.30139 # 0.39193-0.09054
+        time_begin: 1600
+        time_end: 2100
+      - tier: 2
+        description: Winter above baseline off-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.37162
+        time_begin: 2100
+        time_end: 1600
+      - tier: 1
+        description: Winter below baseline off peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.29084
+        time_begin: 2100
+        time_end: 1600
+    - name: E-TOU-C
       active_since: "2022-06-01"
+      deprecated_on: "2022-12-31"
       description: Time-of-Use (Peak Pricing 4-9 p.m. Every Day)
       rates:
       - tier: 2
@@ -356,8 +523,6 @@
         price: 0.28406 # 0.37460-0.09054
         time_begin: 2100
         time_end: 1600
-
-    # Check your baseline allowance (varies per region/climate and electric heating or not)
     - name: E-TOU-C
       active_since: "2022-03-01"
       deprecated_on: "2022-05-31"
@@ -420,8 +585,6 @@
         price: 0.28355 # 0.37373 - 0.09018
         time_begin: 2100
         time_end: 1600
-
-    # Check your baseline allowance (varies per region/climate and electric heating or not)
     - name: E-TOU-C
       deprecated_on: "2022-02-28"
       active_since: "2021-08-01"
@@ -455,7 +618,6 @@
         price: 0.28053 # 0.35628 - 0.07575
         time_begin: 2100
         time_end: 1600
-
       - tier: 2
         description: Winter above baseline peak
         date_begin: Oct 1
@@ -484,8 +646,6 @@
         price: 0.22956 # 0.30531 - 0.07575
         time_begin: 2100
         time_end: 1600
-
-
     - name: E-TOU-C
       deprecated_on: "2021-07-31"
       active_since: NULL
@@ -547,7 +707,140 @@
         price: 0.30919
         time_begin: 1600
         time_end: 2100
-
+    - name: E-TOU-D
+      deprecated_on: NULL
+      active_since: "2023-01-01"
+      description: Time-of-Use (Peak Pricing 5 - 8 p.m. Non-Holiday Weekdays) Territory T with electric heating (H)
+      rates:
+      - description: Summer peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.48124
+        time_begin: 1700
+        time_end: 2000
+        days:
+          - Monday
+          - Tuesday
+          - Wednesday
+          - Thursday
+          - Friday
+      - description: Summer off-peak (weekdays)
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.34628
+        time_begin: 2000
+        time_end: 1700
+        days:
+          - Monday
+          - Tuesday
+          - Wednesday
+          - Thursday
+          - Friday
+      - description: Summer off-peak (weekends)
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.34628
+        days:
+          - Saturday
+          - Sunday
+      - description: Winter peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.39164
+        time_begin: 1700
+        time_end: 2000
+        days:
+          - Monday
+          - Tuesday
+          - Wednesday
+          - Thursday
+          - Friday
+      - description: Winter Off-peak (weekdays)
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.35303
+        time_begin: 2000
+        time_end: 1700
+        days:
+          - Monday
+          - Tuesday
+          - Wednesday
+          - Thursday
+          - Friday
+      - description: Winter Off-peak (weekdends)
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.35303
+        days:
+          - Saturday
+          - Sunday
+    - name: E-TOU-D
+      deprecated_on: "2022-12-31"
+      active_since: "2022-03-01"
+      description: Time-of-Use (Peak Pricing 5 - 8 p.m. Non-Holiday Weekdays) Territory T with electric heating (H)
+      rates:
+      - description: Summer peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.47208
+        time_begin: 1700
+        time_end: 2000
+        days:
+          - Monday
+          - Tuesday
+          - Wednesday
+          - Thursday
+          - Friday
+      - description: Summer off-peak (weekdays)
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.33712
+        time_begin: 2000
+        time_end: 1700
+        days:
+          - Monday
+          - Tuesday
+          - Wednesday
+          - Thursday
+          - Friday
+      - description: Summer off-peak (weekends)
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.33712
+        days:
+          - Saturday
+          - Sunday
+      - description: Winter peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.38248
+        time_begin: 1700
+        time_end: 2000
+        days:
+          - Monday
+          - Tuesday
+          - Wednesday
+          - Thursday
+          - Friday
+      - description: Winter Off-peak (weekdays)
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.34387
+        time_begin: 2000
+        time_end: 1700
+        days:
+          - Monday
+          - Tuesday
+          - Wednesday
+          - Thursday
+          - Friday
+      - description: Winter Off-peak (weekdends)
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.34387
+        days:
+          - Saturday
+          - Sunday
     - name: E-TOU-D
       deprecated_on: "2022-02-28"
       active_since: NULL
@@ -612,73 +905,6 @@
         date_begin: Oct 1
         date_end: May 31
         price: 0.28684
-        days:
-          - Saturday
-          - Sunday
-    - name: E-TOU-D
-      deprecated_on: NULL
-      active_since: "2022-03-01"
-      description: Time-of-Use (Peak Pricing 5 - 8 p.m. Non-Holiday Weekdays) Territory T with electric heating (H)
-      rates:
-      - description: Summer peak
-        date_begin: Jun 1
-        date_end: Sep 30
-        price: 0.47208
-        time_begin: 1700
-        time_end: 2000
-        days:
-          - Monday
-          - Tuesday
-          - Wednesday
-          - Thursday
-          - Friday
-      - description: Summer off-peak (weekdays)
-        date_begin: Jun 1
-        date_end: Sep 30
-        price: 0.33712
-        time_begin: 2000
-        time_end: 1700
-        days:
-          - Monday
-          - Tuesday
-          - Wednesday
-          - Thursday
-          - Friday
-      - description: Summer off-peak (weekends)
-        date_begin: Jun 1
-        date_end: Sep 30
-        price: 0.33712
-        days:
-          - Saturday
-          - Sunday
-      - description: Winter peak
-        date_begin: Oct 1
-        date_end: May 31
-        price: 0.38248
-        time_begin: 1700
-        time_end: 2000
-        days:
-          - Monday
-          - Tuesday
-          - Wednesday
-          - Thursday
-          - Friday
-      - description: Winter Off-peak (weekdays)
-        date_begin: Oct 1
-        date_end: May 31
-        price: 0.34387
-        time_begin: 2000
-        time_end: 1700
-        days:
-          - Monday
-          - Tuesday
-          - Wednesday
-          - Thursday
-          - Friday
-      - description: Winter Off-peak (weekdends)
-        date_begin: Oct 1
-        date_end: May 31
-        price: 0.34387
         days:
           - Saturday
           - Sunday

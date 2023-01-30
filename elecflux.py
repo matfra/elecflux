@@ -196,7 +196,7 @@ def generate_datapoints(
                 or requested_fill_from_dt > plan_end_dt
             ):
                 logger.debug(
-                    f"Ignoring plan {plan} out of dates {requested_fill_from_dt} - {requested_fill_until_dt}"
+                    f"Ignoring deprecated plan {plan} out of dates {requested_fill_from_dt} - {requested_fill_until_dt}"
                 )
                 continue
             fill_from_dt = max(requested_fill_from_dt, plan_begin_dt)
