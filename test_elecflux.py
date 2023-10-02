@@ -261,6 +261,7 @@ def test_generate_datapoints_allowances():
             "provider": "foo",
             "allowances": [
                 {
+                    "active_since": "2005-01-01",
                     "all_electric": True,
                     "daily_allowance_per_territory_kWh": {
                         "T": 13.6,
@@ -269,9 +270,28 @@ def test_generate_datapoints_allowances():
                     "date_end": "May 31",
                 },
                 {
+                    "active_since": "2005-01-01",
                     "all_electric": True,
                     "daily_allowance_per_territory_kWh": {
                         "T": 7.5,
+                    },
+                    "date_begin": "Jun 1",
+                    "date_end": "Sep 30",
+                },
+                {
+                    "deprecated_on": "2004-12-31",
+                    "all_electric": True,
+                    "daily_allowance_per_territory_kWh": {
+                        "T": 15,
+                    },
+                    "date_begin": "Oct 1",
+                    "date_end": "May 31",
+                },
+                {
+                    "deprecated_on": "2004-12-31",
+                    "all_electric": True,
+                    "daily_allowance_per_territory_kWh": {
+                        "T": 7,
                     },
                     "date_begin": "Jun 1",
                     "date_end": "Sep 30",
@@ -318,6 +338,134 @@ def test_generate_datapoints_allowances():
         )
         not in results
     )
+
+def test_season_over_new_year():
+    RATES = [
+        {
+            "provider": "foo",
+            "allowances": [
+                {
+                    "active_since": "2022-01-01",
+                    "all_electric": True,
+                    "daily_allowance_per_territory_kWh": {
+                        "T": 13.6,
+                    },
+                    "date_begin": "Oct 1",
+                    "date_end": "May 31",
+                },
+                {
+                    "active_since": "2022-01-01",
+                    "all_electric": True,
+                    "daily_allowance_per_territory_kWh": {
+                        "T": 7.5,
+                    },
+                    "date_begin": "Jun 1",
+                    "date_end": "Sep 30",
+                },
+                {
+                    "deprecated_on": "2021-12-31",
+                    "all_electric": True,
+                    "daily_allowance_per_territory_kWh": {
+                        "T": 15,
+                    },
+                    "date_begin": "Oct 1",
+                    "date_end": "May 31",
+                },
+                {
+                    "deprecated_on": "2021-12-31",
+                    "all_electric": True,
+                    "daily_allowance_per_territory_kWh": {
+                        "T": 7,
+                    },
+                    "date_begin": "Jun 1",
+                    "date_end": "Sep 30",
+                },
+            ],
+        }
+    ]
+    mytz = pytz.timezone("America/Los_Angeles")
+    results = generate_datapoints(RATES, "2022-10-02", "2022-10-02", mytz)
+    assert len(results) == 1 
+
+def test_seasons_over_years_with_deprecated_plans():
+    RATES = [
+        {
+            "provider": "foo",
+            "allowances": [
+                {
+                    "active_since": "2003-01-01",
+                    "all_electric": True,
+                    "daily_allowance_per_territory_kWh": {
+                        "T": 3.1,
+                    },
+                    "date_begin": "Oct 1",
+                    "date_end": "May 31",
+                },
+                {
+                    "active_since": "2003-01-01",
+                    "all_electric": True,
+                    "daily_allowance_per_territory_kWh": {
+                        "T": 3.11,
+                    },
+                    "date_begin": "Jun 1",
+                    "date_end": "Sep 30",
+                },
+                {
+                    "deprecated_on": "2002-12-31",
+                    "active_since": "2002-01-01",
+                    "all_electric": True,
+                    "daily_allowance_per_territory_kWh": {
+                        "T": 2.1,
+                    },
+                    "date_begin": "Oct 1",
+                    "date_end": "May 31",
+                },
+                {
+                    "deprecated_on": "2002-12-31",
+                    "active_since": "2002-01-01",
+                    "all_electric": True,
+                    "daily_allowance_per_territory_kWh": {
+                        "T": 2.11,
+                    },
+                    "date_begin": "Jun 1",
+                    "date_end": "Sep 30",
+                },
+                {
+                    "deprecated_on": "2001-12-31",
+                    "all_electric": True,
+                    "daily_allowance_per_territory_kWh": {
+                        "T": 1.1,
+                    },
+                    "date_begin": "Oct 1",
+                    "date_end": "May 31",
+                },
+                {
+                    "deprecated_on": "2001-12-31",
+                    "all_electric": True,
+                    "daily_allowance_per_territory_kWh": {
+                        "T": 1.11,
+                    },
+                    "date_begin": "Jun 1",
+                    "date_end": "Sep 30",
+                },
+            ],
+        }
+    ]
+    mytz = pytz.timezone("America/Los_Angeles")
+    # When allowance is across the EOY, we need change the year for either start or end
+    #             2001         |          2002       |        2003    
+    #                   Oct         May       Oct         May        Oct
+    # deprecated   √         √           √           <
+    # new one                                        >  √        √         
+    for d, e in [("2001-09-01", 1.11), ("2001-10-01", 1.1), ("2002-09-01", 2.11), ("2003-02-01", 3.1), ("2003-09-01", 3.11)]:
+        assert_allowance_datapoint_value_at_date(RATES, d, e)
+
+
+def assert_allowance_datapoint_value_at_date(rates, date, expected_value):
+    mytz = pytz.timezone("America/Los_Angeles")
+    results = generate_datapoints(rates, date, date, mytz)
+    assert len(results) == 1
+    assert (date, results[0].values['allowance']) == (date, expected_value)
 
 
 def test_dst_fall_back():
@@ -426,6 +574,121 @@ def test_dst_persits():
         )
         in results
     )
+
+def test_prices_over_winter_to_summer():
+    RATES = [
+        {
+            "provider": "foo",
+            "plans": [
+                {
+                    "name": "bar",
+                    "rates": [
+                        {
+                            "price": 0.1,
+                            "date_begin": "Jan 1",
+                            "date_end": "May 31",
+                        },
+                        {
+                            "price": 0.5,
+                            "date_begin": "Jun 1",
+                            "date_end": "Dec 31",
+                        },
+                    ],
+                }
+            ],
+        }
+    ]
+    mytz = pytz.timezone("America/Los_Angeles")
+    results = generate_datapoints(RATES, "2022-05-31", "2022-06-01", mytz)
+    assert len(results) == 2
+
+def test_prices_over_summer_to_winter():
+    RATES = [
+        {
+            "provider": "foo",
+            "plans": [
+                {
+                    "name": "bar",
+                    "active_since": "2022-01-01",
+                    "rates": [
+                        {
+                            "price": 0.1,
+                            "date_begin": "Oct 1",
+                            "date_end": "May 31",
+                        },
+                        {
+                            "price": 0.5,
+                            "date_begin": "Jun 1",
+                            "date_end": "Sep 30",
+                        },
+                    ],
+                },
+                {
+                    "name": "bar",
+                    "deprecated_on": "2021-12-31",
+                    "rates": [
+                        {
+                            "price": 0.2,
+                            "date_begin": "Oct 1",
+                            "date_end": "May 31",
+                        },
+                        {
+                            "price": 0.6,
+                            "date_begin": "Jun 1",
+                            "date_end": "Sep 30",
+                        },
+                    ],
+                }
+            ],
+        }
+    ]
+    mytz = pytz.timezone("America/Los_Angeles")
+    results = generate_datapoints(RATES, "2022-09-30", "2022-10-01", mytz)
+    assert len(results) == 2
+
+def test_no_missing_datapoints_with_tou_when_price_change():
+    RATES = [
+        {
+            "provider": "foo",
+            "plans": [
+                {
+                    "name": "bar",
+                    "active_since": "2023-10-01",
+                    "rates": [
+                        {
+                            "price": 0.2,
+                            "date_begin": "Oct 1",
+                            "date_end": "May 31",
+                        },
+                        {
+                            "price": 0.6,
+                            "date_begin": "Jun 1",
+                            "date_end": "Sep 30",
+                        },
+                    ],
+                },
+                {
+                    "name": "bar",
+                    "deprecated_on": "2023-09-30",
+                    "rates": [
+                        {
+                            "price": 0.1,
+                            "date_begin": "Oct 1",
+                            "date_end": "May 31",
+                        },
+                        {
+                            "price": 0.5,
+                            "date_begin": "Jun 1",
+                            "date_end": "Sep 30",
+                        },
+                    ],
+                }
+            ],
+        }
+    ]
+    mytz = pytz.timezone("America/Los_Angeles")
+    results = generate_datapoints(RATES, "2023-10-01", "2023-10-01", mytz)
+    assert len(results) == 1
 
 def test_prices_over_multiple_years():
     RATES = [

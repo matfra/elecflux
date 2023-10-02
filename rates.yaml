@@ -120,7 +120,60 @@
       - tier: 3
         price: 0.40745
     - name: E-Elec
+      active_since: "2023-07-01"
+      description: The rate plan for an electric-powered home (new since Dec 2022)
+      rates:
+      - description: Summer Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.55972 
+        time_begin: 1600
+        time_end: 2100
+      - description: Summer Part-Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.39784
+        time_begin: 1500
+        time_end: 1600
+      - description: Summer Part-Peak (continued)
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.39784
+        time_begin: 2100
+        time_end: 0000
+      - description: Summer Off-Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.34116
+        time_begin: 0000
+        time_end: 1500
+      - description: Winter full-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.3282
+        time_begin: 1600
+        time_end: 2100
+      - description: Winter part-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.30611
+        time_begin: 1500
+        time_end: 1600
+      - description: Winter part-peak (continued)
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.30611
+        time_begin: 2100
+        time_end: 0000
+      - description: Winter off-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.29225
+        time_begin: 0000
+        time_end: 1500
+    - name: E-Elec
       active_since: "2020-01-01"
+      deprecated_on: "2023-06-30"
       description: The rate plan for an electric-powered home (new since Dec 2022)
       rates:
       - description: Summer Peak
@@ -172,7 +225,113 @@
         time_begin: 0000
         time_end: 1500
     - name: EV2
+      active_since: "2023-10-01"
+      description: Time-of-Use Electric Vehicule 2
+      rates:
+      - description: Summer Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.59068
+        time_begin: 1600
+        time_end: 2100
+      - description: Summer Part-Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.48019
+        time_begin: 1500
+        time_end: 1600
+      - description: Summer Part-Peak (continued)
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.48019
+        time_begin: 2100
+        time_end: 0000
+      - description: Summer Off-Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.27818
+        time_begin: 0000
+        time_end: 1500
+      - description: Winter full-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.46357
+        time_begin: 1600
+        time_end: 2100
+      - description: Winter part-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.44687
+        time_begin: 1500
+        time_end: 1600
+      - description: Winter part-peak (continued)
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.44687
+        time_begin: 2100
+        time_end: 0000
+      - description: Winter off-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.27818
+        time_begin: 0000
+        time_end: 1500
+    - name: EV2
+      active_since: "2023-07-01"
+      deprecated_on: "2023-09-30"
+      description: Time-of-Use Electric Vehicule 2
+      rates:
+      - description: Summer Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.58441
+        time_begin: 1600
+        time_end: 2100
+      - description: Summer Part-Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.47392
+        time_begin: 1500
+        time_end: 1600
+      - description: Summer Part-Peak (continued)
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.47392
+        time_begin: 2100
+        time_end: 0000
+      - description: Summer Off-Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.2719
+        time_begin: 0000
+        time_end: 1500
+      - description: Winter full-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.4573
+        time_begin: 1600
+        time_end: 2100
+      - description: Winter part-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.4406
+        time_begin: 1500
+        time_end: 1600
+      - description: Winter part-peak (continued)
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.4406
+        time_begin: 2100
+        time_end: 0000
+      - description: Winter off-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.2719
+        time_begin: 0000
+        time_end: 1500
+    - name: EV2
       active_since: "2023-01-01"
+      deprecated_on: "2023-06-30"
       description: Time-of-Use Electric Vehicule 2
       rates:
       - description: Summer Peak
@@ -437,7 +596,69 @@
 
     # Check your baseline allowance (varies per region/climate and electric heating or not)
     - name: E-TOU-C
+      active_since: "2023-07-01"
+      description: Time-of-Use (Peak Pricing 4-9 p.m. Every Day)
+      rates:
+      - tier: 2
+        description: Summer above baseline peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.5324 
+        time_begin: 1600
+        time_end: 2100
+      - tier: 1
+        description: Summer below baseline peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.44511
+        time_begin: 1600
+        time_end: 2100
+      - tier: 2
+        description: Summer above baseline off-peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.44896 
+        time_begin: 2100
+        time_end: 1600
+      - tier: 1
+        description: Summer below baseline off-peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.36167 
+        time_begin: 2100
+        time_end: 1600
+
+      - tier: 2
+        description: Winter above baseline peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.42969
+        time_begin: 1600
+        time_end: 2100
+      - tier: 1
+        description: Winter below baseline peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.3424
+        time_begin: 1600
+        time_end: 2100
+      - tier: 2
+        description: Winter above baseline off-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.40134
+        time_begin: 2100
+        time_end: 1600
+      - tier: 1
+        description: Winter below baseline off peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.31405
+        time_begin: 2100
+        time_end: 1600
+    - name: E-TOU-C
       active_since: "2023-01-01"
+      deprecated_on: "2023-06-30"
       description: Time-of-Use (Peak Pricing 4-9 p.m. Every Day)
       rates:
       - tier: 2
@@ -743,6 +964,7 @@
         price: 0.30919
         time_begin: 1600
         time_end: 2100
+
     - name: E-TOU-D
       deprecated_on: NULL
       active_since: "2023-01-01"

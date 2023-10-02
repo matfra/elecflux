@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 This script populates Electricity rates defined in a custom YAML format
-into an InfluxDB (v1) so it can be used in concert with emporia-vue or any
+into an InfluxDB (v2) so it can be used in concert with emporia-vue or any
 other electricity usage timeseries.
 
 The script can run either continuously as a daemon or (soon TM)
@@ -14,7 +14,7 @@ More details on the YAML format in the rates.yaml file
 """
 
 __author__ = "Mathieu Frappier"
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __license__ = "MIT"
 
 from typing import Dict, List, Union
@@ -126,6 +126,7 @@ def generate_datapoints(
                     f"Ignoring allowance {allowance} out of dates {requested_fill_from_dt} - {requested_fill_until_dt}"
                 )
                 continue
+            logger.info(f"Found a valid plan: {allowance} starting on {allowance_begin_date} and ending on {allowance_end_date}")
             fill_from_dt = max(requested_fill_from_dt, allowance_begin_dt)
             fill_until_dt = min(requested_fill_until_dt, allowance_end_dt)
 
@@ -143,11 +144,12 @@ def generate_datapoints(
                         "%b %d %Y",
                     )
                 )
-
-                if allowance_season_end_dt < allowance_season_begin_dt:
-                    allowance_season_begin_dt -= timedelta(days=365)
-                elif allowance_season_begin_dt > allowance_season_end_dt:
-                    allowance_season_end_dt += timedelta(days=365)
+                # When allowance is across the EOY, we need change the year for either start or end  
+                if allowance_season_end_dt < allowance_season_begin_dt:                    
+                    if allowance_season_begin_dt > requested_fill_from_dt:
+                        allowance_season_begin_dt -= timedelta(days=365)
+                    else:
+                        allowance_season_end_dt += timedelta(days=365)
 
                 allowance_season_fill_from_dt = max(
                     allowance_season_begin_dt,
@@ -199,6 +201,7 @@ def generate_datapoints(
                     f"Ignoring deprecated plan {plan} out of dates {requested_fill_from_dt} - {requested_fill_until_dt}"
                 )
                 continue
+            logger.info(f"Found valid plan: {plan['name']} from {plan_begin_date} to {plan_end_date}")
             fill_from_dt = max(requested_fill_from_dt, plan_begin_dt)
             fill_until_dt = min(requested_fill_until_dt, plan_end_dt)
             year = fill_from_dt.year
@@ -218,9 +221,10 @@ def generate_datapoints(
                         )
                     )
                     if rate_end_dt < rate_begin_dt:
-                        rate_begin_dt -= timedelta(days=365)
-                    elif rate_begin_dt > rate_end_dt:
-                        rate_end_dt += timedelta(days=365)
+                        if rate_begin_dt > requested_fill_from_dt:
+                            rate_begin_dt -= timedelta(days=365)
+                        else:
+                            rate_end_dt += timedelta(days=365)
                     rate_fill_from_dt = max(
                         rate_begin_dt, requested_fill_from_dt, plan_begin_dt
                     )
@@ -337,6 +341,7 @@ def run_influx_daemon(rates, timezone, influx_url, token, org):
 
 
 def main(args):
+    logger.setLevel(args.log_level)
     logger.debug("Running with the following args:")
     logger.debug(args)
     rates = load_rates_from_file(args.rates_file)
@@ -416,9 +421,8 @@ if __name__ == "__main__":
         default="America/Los_Angeles",
     )
 
-    # Optional verbosity counter (eg. -v, -vv, -vvv, etc.)
     parser.add_argument(
-        "-v", "--verbose", action="count", default=0, help="Verbosity (-v, -vv, etc)"
+        "-l", "--log-level", type=str, default='INFO', help="Logzero levels (DEBUG, INFO, WARNING, ERROR)"
     )
 
     # Specify output of "--version"
