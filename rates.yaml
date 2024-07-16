@@ -224,6 +224,7 @@
         price: 0.26233
         time_begin: 0000
         time_end: 1500
+
     - name: EV2
       active_since: "2024-04-01"
       description: Time-of-Use Electric Vehicule 2
@@ -755,7 +756,69 @@
 
     # Check your baseline allowance (varies per region/climate and electric heating or not)
     - name: E-TOU-C
+      active_since: "2024-06-01"
+      description: Time-of-Use (Peak Pricing 4-9 p.m. Every Day)
+      rates:
+      - tier: 2
+        description: Summer above baseline peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.63879
+        time_begin: 1600
+        time_end: 2100
+      - tier: 1
+        description: Summer below baseline peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.53149
+        time_begin: 1600
+        time_end: 2100
+      - tier: 2
+        description: Summer above baseline off-peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.53579
+        time_begin: 2100
+        time_end: 1600
+      - tier: 1
+        description: Summer below baseline off-peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.42849
+        time_begin: 2100
+        time_end: 1600
+
+      - tier: 2
+        description: Winter above baseline peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.52461
+        time_begin: 1600
+        time_end: 2100
+      - tier: 1
+        description: Winter below baseline peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.41731
+        time_begin: 1600
+        time_end: 2100
+      - tier: 2
+        description: Winter above baseline off-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.49461
+        time_begin: 2100
+        time_end: 1600
+      - tier: 1
+        description: Winter below baseline off peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.38731
+        time_begin: 2100
+        time_end: 1600
+    - name: E-TOU-C
       active_since: "2023-07-01"
+      deprecated_on: "2024-05-31"
       description: Time-of-Use (Peak Pricing 4-9 p.m. Every Day)
       rates:
       - tier: 2
