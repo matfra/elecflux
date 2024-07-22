@@ -224,9 +224,61 @@
         price: 0.26233
         time_begin: 0000
         time_end: 1500
-
+    - name: EV2
+      active_since: "2024-07-01"
+      description: Time-of-Use Electric Vehicule 2
+      rates:
+      - description: Summer Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.62174
+        time_begin: 1600
+        time_end: 2100
+      - description: Summer Part-Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.51125
+        time_begin: 1500
+        time_end: 1600
+      - description: Summer Part-Peak (continued)
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.51125
+        time_begin: 2100
+        time_end: 0000
+      - description: Summer Off-Peak
+        date_begin: Jun 1
+        date_end: Sep 30
+        price: 0.30924
+        time_begin: 0000
+        time_end: 1500
+      - description: Winter full-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.49463
+        time_begin: 1600
+        time_end: 2100
+      - description: Winter part-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.47793
+        time_begin: 1500
+        time_end: 1600
+      - description: Winter part-peak (continued)
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.47793
+        time_begin: 2100
+        time_end: 0000
+      - description: Winter off-peak
+        date_begin: Oct 1
+        date_end: May 31
+        price: 0.30924
+        time_begin: 0000
+        time_end: 1500
     - name: EV2
       active_since: "2024-04-01"
+      deprecated_on: "2024-06-30"
       description: Time-of-Use Electric Vehicule 2
       rates:
       - description: Summer Peak
