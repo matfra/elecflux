@@ -10,15 +10,16 @@ It works well with https://github.com/jertel/vuegraf
 ```
 git clone https://github.com/matfra/elecflux.git
 cd elecflux
-python -m virtualenv -p python3 venv
+python -m venv -p python3 venv
 venv/bin/pip install -r requirements.txt
-venv/bin/python ./elecflux.py rates.yaml -b 2021-06-01 -e 2021-12-31 --csv > rates_2021_H2.csv
+venv/bin/python ./elecflux.py rates.yaml -b 2025-01-01 -e 2026-12-31 --csv > rates_2025-2026.csv
 ```
 
 To import in an influxDB:
 ```
-influx --host 127.0.0.1 -import -path=rates_2021_H2.csv -precision=s -database=vue
+~/influxdb2-client-2.3.0-linux-amd64$ ./influx write -b "vue/autogen" -p ns --format=lp -f ../rates_2025-2026.csv
 ```
+
 # Disclaimer
 Anything is provided as an example and shouldn't be used in production
 
