@@ -1,0 +1,1004 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 2,
+  "links": [],
+  "panels": [
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 14,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "This does not support the tiered usage yet (E-TOU-C/D and E1)",
+        "mode": "markdown"
+      },
+      "pluginVersion": "12.0.0",
+      "title": "Information",
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "gfWG1H97z"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 0,
+        "y": 2
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {},
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "gfWG1H97z"
+          },
+          "query": "usage = from(bucket: \"vue/autogen\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"energy_usage\")\n  |> filter(fn: (r) => r[\"_field\"] == \"usage\")\n  |> filter(fn: (r) => r[\"device_name\"] == \"$location\")\n  |> filter(fn: (r) => r[\"detailed\"] == \"False\")\n  |> aggregateWindow(every: 60m, fn: mean, createEmpty: false)\n\n\nprice = from(bucket: \"vue/autogen\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"rates\")\n  |> filter(fn: (r) => r[\"_field\"] == \"price\")\n  |> filter(fn: (r) => r[\"provider\"] == \"$provider\")\n  |> filter(fn: (r) => r[\"plan\"] == \"$plan\")\n  |> aggregateWindow(\n    every: 60m,\n    fn: last,\n    createEmpty: true,\n  )\n  |>fill(column: \"_value\", usePrevious: true)\n  |>timeShift(duration: -0h, columns: [\"_time\"])\n\n\njoin(\n  tables: {usage:usage, price:price},\n  on: [\"_time\", \"_stop\", \"_start\"],\n  )\n  |> map(fn: (r) => ({_time: r._time, _value: r._value_usage * r._value_price * 0.001}))\n  |> cumulativeSum()\n  |> last()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Total cost for the selected plans and time range",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "gfWG1H97z"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 3,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "watth"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 4,
+        "y": 2
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {},
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "gfWG1H97z"
+          },
+          "query": "import \"interpolate\"\nusage = from(bucket: \"vue/autogen\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"energy_usage\")\n  |> filter(fn: (r) => r[\"_field\"] == \"usage\")\n  |> filter(fn: (r) => r[\"device_name\"] == \"$location\")\n  |> filter(fn: (r) => r[\"detailed\"] == \"False\")\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> interpolate.linear(every: 1h)\n  |> cumulativeSum()\n  |> last()\n  |> yield()",
+          "refId": "A"
+        }
+      ],
+      "title": "Total usage",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "gfWG1H97z"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": 3600000,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "watt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 17,
+        "x": 7,
+        "y": 2
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "gfWG1H97z"
+          },
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "measurement": "energy_usage",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "from(bucket: \"vue/autogen\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"energy_usage\")\n  |> filter(fn: (r) => r[\"_field\"] == \"usage\")\n  |> filter(fn: (r) => r[\"device_name\"] == \"$location\")\n  |> filter(fn: (r) => r[\"detailed\"] == \"False\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield()",
+          "rawQuery": true,
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "usage"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "device_name",
+              "operator": "=~",
+              "value": "/^$location(-1,2,3)?$/"
+            }
+          ]
+        }
+      ],
+      "title": "Energy usage (via cloud)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "gfWG1H97z"
+      },
+      "description": "Usage limit for this period before paying the higher tier pricing. Does not apply to EV2 and E-TOU-D",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "kwatth"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 4,
+        "y": 5
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {},
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "gfWG1H97z"
+          },
+          "query": "from(bucket: \"vue/autogen\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"allowances\")\n  |> filter(fn: (r) => r[\"_field\"] == \"allowance\")\n  |> filter(fn: (r) => r[\"provider\"] == \"$provider\")\n  |> filter(fn: (r) => r[\"all_electric\"] == \"$all_electric\")\n  |> filter(fn: (r) => r[\"territory\"] == \"$territory\")\n  |> aggregateWindow(\n    every: 1d,\n    fn: last,\n    createEmpty: true,\n  )\n  |> fill(usePrevious: true)\n  |> cumulativeSum()\n  |> last()\n  |> yield()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Baseline allowance for this period",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "gfWG1H97z"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": 3600000,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "watth"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 7,
+        "x": 0,
+        "y": 8
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "gfWG1H97z"
+          },
+          "query": "import \"interpolate\"\nusage = from(bucket: \"vue/autogen\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"energy_usage\")\n  |> filter(fn: (r) => r[\"_field\"] == \"usage\")\n  |> filter(fn: (r) => r[\"device_name\"] == \"$location\")\n  |> filter(fn: (r) => r[\"detailed\"] == \"False\")\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> interpolate.linear(every: 1h)\n  |> cumulativeSum()\n\nallowance = from(bucket: \"vue/autogen\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"allowances\")\n  |> filter(fn: (r) => r[\"_field\"] == \"allowance\")\n  |> filter(fn: (r) => r[\"provider\"] == \"$provider\")\n  |> filter(fn: (r) => r[\"all_electric\"] == \"$all_electric\")\n  |> filter(fn: (r) => r[\"territory\"] == \"$territory\")\n |> map(fn: (r) => ({r with _value: r._value * 1000.0}))  |> aggregateWindow(\n    every: 1d,\n    fn: last,\n    createEmpty: true,\n  ) \n  |> fill(usePrevious: true)\n  |> cumulativeSum() \n\n\nunion(tables: [usage, allowance]) |> yield()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Cumulative usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "gfWG1H97z"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 3,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 17,
+        "x": 7,
+        "y": 8
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "alias": "$plan tier [[tag_tier]]",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "gfWG1H97z"
+          },
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "tier"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "previous"
+              ],
+              "type": "fill"
+            }
+          ],
+          "measurement": "rates",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "from(bucket: \"vue/autogen\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"rates\")\n  |> filter(fn: (r) => r[\"_field\"] == \"price\")\n  |> filter(fn: (r) => r[\"provider\"] == \"$provider\")\n  |> filter(fn: (r) => r[\"plan\"] == \"$plan\")\n  |> aggregateWindow(\n    every: 1h,\n    fn: last,\n    createEmpty: true,\n  )\n  |>fill(column: \"_value\", usePrevious: true)\n    |> timeShift(duration: -1h, columns: [\"_time\"])\n\n    |> yield()\n",
+          "rawQuery": true,
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "price"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "last"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "provider",
+              "operator": "=~",
+              "value": "/^$provider$/"
+            },
+            {
+              "condition": "AND",
+              "key": "plan",
+              "operator": "=~",
+              "value": "/^$plan$/"
+            }
+          ]
+        }
+      ],
+      "title": "Plan pricing",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "gfWG1H97z"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "points",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 5,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": 3600000,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rates price {plan=\"E-TOU-C\", provider=\"PG&E\", tier=\"1\"}"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rates price {plan=\"E-TOU-C\", provider=\"PG&E\", tier=\"2\"}"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 17,
+        "x": 7,
+        "y": 13
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "gfWG1H97z"
+          },
+          "query": "usage = from(bucket: \"vue/autogen\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"energy_usage\")\n  |> filter(fn: (r) => r[\"_field\"] == \"usage\")\n  |> filter(fn: (r) => r[\"device_name\"] == \"$location\")\n  |> filter(fn: (r) => r[\"detailed\"] == \"False\")\n  |> aggregateWindow(every: 60m, fn: mean, createEmpty: false)\n\nprice = from(bucket: \"vue/autogen\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"rates\")\n  |> filter(fn: (r) => r[\"_field\"] == \"price\")\n  |> filter(fn: (r) => r[\"provider\"] == \"$provider\")\n  |> filter(fn: (r) => r[\"plan\"] == \"$plan\")\n  |> aggregateWindow(\n    every: 60m,\n    fn: min,\n    createEmpty: true,\n  )\n  |>fill(column: \"_value\", usePrevious: true)\n  |>timeShift(duration: -0m, columns: [\"_time\"])\n\njoin(\n  tables: {usage:usage, price:price},\n  on: [\"_time\"],\n  )\n  |> map(fn: (r) => ({_time: r._time, _value: r._value_usage * r._value_price * 0.001}))\n  |> yield(name: \"Hourly cost in USD\")\n\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Hourly energy cost",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "gfWG1H97z"
+      },
+      "description": "This should be equal to the selected time range. If it's smaller, that means we are omitting data. Try selected a smaller range",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 3,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 7,
+        "x": 0,
+        "y": 16
+      },
+      "id": 10,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {},
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "gfWG1H97z"
+          },
+          "query": "usage = from(bucket: \"vue/autogen\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"energy_usage\")\n  |> filter(fn: (r) => r[\"_field\"] == \"usage\")\n  |> filter(fn: (r) => r[\"device_name\"] == \"$location\")\n  |> filter(fn: (r) => r[\"detailed\"] == \"False\")\n  |> count()\n  |> map(fn: (r) => ({r with _value: float(v: r._value) / 1440.0}))\n  |>yield()",
+          "refId": "A"
+        }
+      ],
+      "title": "days worth of data with 1min resolution",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "gfWG1H97z"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 7,
+        "x": 0,
+        "y": 20
+      },
+      "id": 15,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {},
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "gfWG1H97z"
+          },
+          "query": "import \"generate\"\n\nt1 = generate.from(count: 1, fn: (n) => 1, start: v.timeRangeStart, stop: v.timeRangeStart)\nt2 = generate.from(count: 1, fn: (n) => 1, start: v.timeRangeStop, stop: v.timeRangeStop)\n\nunion(tables: [t1, t2]) |> sort(columns: [\"_time\"], desc: false) |> elapsed() ",
+          "refId": "A"
+        }
+      ],
+      "title": "Total cost for the selected plans and time range",
+      "type": "stat"
+    }
+  ],
+  "preload": false,
+  "refresh": "",
+  "schemaVersion": 41,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "basement",
+          "value": "basement"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "gfWG1H97z"
+        },
+        "definition": "import \"influxdata/influxdb/schema\"\nschema.tagValues(\n    bucket: \"vue/autogen\",\n    tag: \"device_name\",\n    predicate: (r) => true,\n    start: v.timeRangeStart,\n    stop: v.timeRangeStop\n)",
+        "hide": 1,
+        "includeAll": false,
+        "label": "location",
+        "name": "location",
+        "options": [],
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(\n    bucket: \"vue/autogen\",\n    tag: \"device_name\",\n    predicate: (r) => true,\n    start: v.timeRangeStart,\n    stop: v.timeRangeStop\n)",
+        "refresh": 1,
+        "regex": "[^-]+",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "EV2",
+          "value": "EV2"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "gfWG1H97z"
+        },
+        "definition": "import \"influxdata/influxdb/schema\"\nschema.tagValues(\n    bucket: \"vue/autogen\",\n    tag: \"plan\",\n    predicate: (r) => true,\n    start: v.timeRangeStart,\n    stop: v.timeRangeStop\n)",
+        "includeAll": false,
+        "name": "plan",
+        "options": [],
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(\n    bucket: \"vue/autogen\",\n    tag: \"plan\",\n    predicate: (r) => true,\n    start: v.timeRangeStart,\n    stop: v.timeRangeStop\n)",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "PG&E",
+          "value": "PG&E"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "gfWG1H97z"
+        },
+        "definition": "import \"influxdata/influxdb/schema\"\nschema.tagValues(\n    bucket: \"vue/autogen\",\n    tag: \"provider\",\n    predicate: (r) => true,\n    start: v.timeRangeStart,\n    stop: v.timeRangeStop\n)",
+        "includeAll": false,
+        "name": "provider",
+        "options": [],
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(\n    bucket: \"vue/autogen\",\n    tag: \"provider\",\n    predicate: (r) => true,\n    start: v.timeRangeStart,\n    stop: v.timeRangeStop\n)",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "T",
+          "value": "T"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "gfWG1H97z"
+        },
+        "definition": "import \"influxdata/influxdb/schema\"\nschema.tagValues(\n    bucket: \"vue/autogen\",\n    tag: \"territory\",\n    predicate: (r) => true,\n    start: v.timeRangeStart,\n    stop: v.timeRangeStop\n)",
+        "description": "San Francisco is 'T' ",
+        "includeAll": false,
+        "name": "territory",
+        "options": [],
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(\n    bucket: \"vue/autogen\",\n    tag: \"territory\",\n    predicate: (r) => true,\n    start: v.timeRangeStart,\n    stop: v.timeRangeStop\n)",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "1",
+          "value": "1"
+        },
+        "description": "Chose 1 if the main heater in your home is electric",
+        "includeAll": false,
+        "label": "Electric heating?",
+        "name": "all_electric",
+        "options": [
+          {
+            "selected": false,
+            "text": "0",
+            "value": "0"
+          },
+          {
+            "selected": true,
+            "text": "1",
+            "value": "1"
+          }
+        ],
+        "query": "0,1",
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1M/M",
+    "to": "now-1M/M"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Basement electricity usage v2",
+  "uid": "6lJENNr7z",
+  "version": 36
+}
